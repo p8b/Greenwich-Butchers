@@ -1,0 +1,78 @@
+﻿@page
+@using GreenwichButchers.SystemClasses
+@using GreenwichButchers.Models
+@model IndexModel
+@{
+    ViewData["Title"] = "Home page";
+    string carouselActive = "active";
+
+    // Check the login status of the user by passing the "Cookie"
+    // To the Constructor of "LoginCheck" class.
+    var _LoginCheck = new LoginCheck(Request.Cookies["Cookie"] ?? "", true);
+
+    // If User Login status is true (Successful)
+    if (CUser.LoginStatus)
+    {
+        // Overwrite the Cookie with new hash value
+        Response.Cookies.Append("Cookie", _LoginCheck.cookieEncryptM.HashCookieID);
+    }
+    else // Else Login status is false (Failed)
+    {
+        // Delete the Cookie incase it exists
+        Response.Cookies.Delete("Cookie", new Microsoft.AspNetCore.Http.CookieOptions { Expires = DateTime.Now });
+    }
+
+
+
+    // Set the attributes of basket icon in the menu
+    if (Request.Cookies["Basket"] != null)
+    {
+        var SecureCookie = new CookieEncryptM();
+
+        if (SecureCookie.Read(Request.Cookies["Basket"])
+            && SecureCookie.Base64Value != null)
+        {
+            // extract the order object from the cookie
+            var order = (OrderM)(new ObjectConvert().String64ToObject(SecureCookie.Base64Value));
+            // Set the visibility to null
+            ViewData["CustomerBasketVisibility"] = "";
+            ViewData["BasketCount"] = order?.ItemList?.Count.ToString() ?? "0";
+        }
+        else
+        {
+            Response.Cookies.Delete("Basket", new Microsoft.AspNetCore.Http.CookieOptions { Expires = DateTime.Now });
+            Response.Redirect("index", false);
+            return;
+        }
+    }
+    else
+    {
+        ViewData["CustomerBasketVisibility"] = "hidden";
+        ViewData["BasketCount"] = '0';
+
+    }
+
+}
+
+<div class="row justify-content-center">
+    <div id="carouselExampleFade" class="carousel slide carousel-fadel" data-ride="carousel">
+        <div class="carousel-inner img-container">
+            @foreach (var img in Model.ImagesFiles)
+            {
+                <div class="carousel-item @carouselActive">
+                    <img class="d-block img-container-item" src="~/Images/HomePage/@img" alt="No Image Found">
+                </div>
+                carouselActive = "";
+            }
+        </div>
+        <a class="carousel-control-prev" href="#carouselExampleFade" role="button" data-slide="prev">
+            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            <span class="sr-only">Previous</span>
+        </a>
+        <a class="carousel-control-next" href="#carouselExampleFade" role="button" data-slide="next">
+            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            <span class="sr-only">Next</span>
+        </a>
+    </div>
+</div>
+<h1 class="text-center font-weight-bold mt-2" style="font-family:'Bradley Hand ITC'">Products Supplied By Kent Farmers</h1>

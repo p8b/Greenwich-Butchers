@@ -1,0 +1,47 @@
+﻿@model GreenwichButchers.Pages.Shared.OrderRCModel
+<div class="row">
+    @* Search box and category drop-down menu *@
+    <div class="col-sm-12 pb-3">
+        <div class="form-row ">
+            @* Search Box *@
+            <div class="col-sm-4">
+                <div class="col-form-label" for="txtSearchBox">
+                    Search Orders Customer ID or Order ID
+                </div>
+                <input id="txtSeachBox" class="form-control" type="text" asp-for="_SearchValue" placeholder="Search" />
+            </div>
+            @* Filter status Drop down *@
+            <div class="col-sm-2">
+                <div class="col-form-label" for="ddFilterStatus">
+                    Status
+                </div>
+                <select id="ddFilterStatus" class="form-control" asp-for="_FilterStatus">
+                    <option selected>All</option>
+                    <option>Pending</option>
+                    <option>Complete</option>
+                    <option>Cancelled</option>
+                </select>
+            </div>
+            @* Filter type Drop down *@
+            <div class="col-sm-2">
+                <div class="col-form-label" for="ddFilterType">
+                    Type
+                </div>
+                <select id="ddFilterType" class="form-control" asp-for="_FilterType">
+                    <option selected value="All">All</option>
+                    <option>Shop</option>
+                    <option>Bulk</option>
+                </select>
+            </div>
+
+            <div class="col-sm-2 mt-auto">
+                @* Search Button *@
+                <button class="btn btn-secondary col text-white" asp-page-handler="Search">Search</button>
+            </div>
+            <div class="col-sm-2 mt-auto">
+                @* Show All Customers Button *@
+                <button class="btn btn-secondary col text-white" asp-page-handler="ShowAll">Show All</button>
+            </div>
+        </div>
+    </div>
+</div>

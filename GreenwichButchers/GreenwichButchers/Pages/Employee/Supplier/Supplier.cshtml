@@ -1,0 +1,86 @@
+﻿@page "/Suppliers/{PanelNum?}"
+@model GreenwichButchers.Pages.Employee.SupplierRCModel
+@using GreenwichButchers.SystemClasses
+@{
+    ViewData["Title"] = "Suppliers";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+
+    #region Page Login Check
+    // Check the login status of the user by passing the "Cookie"
+    // To the Constructor of "LoginCheck" class.
+    var _LoginCheck = new LoginCheck(Request.Cookies["Cookie"] ?? "", true);
+
+    // If User Login status is true (Successful)
+    if (CUser.LoginStatus)
+    {
+        // Check User's Role
+        switch (CUser.UserRole)
+        {
+            // The Current view is only accessible if the user has "Manager" or
+            // Staff role
+            case "Manager":
+            case "Staff":
+                break;
+            // If the user is customer
+            case "Customer":
+                // Redirect the user to index page
+                Response.Redirect("/Index", false);
+                break;
+        }
+        // Overwrite the Cookie with new hash value
+        Response.Cookies.Append("Cookie", _LoginCheck.cookieEncryptM.HashCookieID);
+    }
+    else // Else Login status is false (Failed)
+    {
+        // Redirect the user to login page
+        Response.Redirect("/Login", false);
+        // Delete the Cookie incase it exists
+        Response.Cookies.Delete("Cookie", new Microsoft.AspNetCore.Http.CookieOptions { Expires = DateTime.Now });
+        return;
+    }
+    #endregion
+
+}
+@* import Page specific JavaScript *@
+@section Scripts{
+    <script type="text/javascript" src="~/js/SuppliersJS.js"></script>
+}
+@* Header *@
+<div class="breadcrumb-item  border-bottom pb-0 border-success">
+    <a class="text-black-50">
+        <h3>Suppliers</h3>
+    </a>
+</div>
+@* Navigation Buttons*@
+<nav class="nav nav-pills mb-3 flex-column flex-sm-row text-center border-bottom">
+    @* The "ViewData[]" is used to set the active element from the server side*@
+    @if (ViewData["View"] != null)
+            {
+        @* Employee  Navigation Button *@
+        <a class="nav-link btn btn-light flex-sm-fill @ViewData["View"]">Selected Supplier</a>
+    }
+    
+        @* Employee  Navigation Button *@
+        <a href="/Suppliers/Search" class="nav-link btn btn-light flex-sm-fill @ViewData["Search"]">Search Suppliers</a>
+        @* Home Page Carousel Control Navigation Button *@
+        <a href="/Suppliers/Add" class="nav-link btn btn-light flex-sm-fill @ViewData["Add"]">Add Suppliers</a>
+</nav>
+
+@* Main Body *@
+<div class="container">
+    @* All Navigation Panels *@
+    <div class="tab-content" id="pills-tabContent">
+        @* Modify Product Panel *@
+        @if (ViewData["Search"] != null)
+        {
+            <partial name="~/Pages/Employee/Supplier/_Search.cshtml" />
+
+        } else if (ViewData["Add"] != null || ViewData["View"] != null)
+        {
+            <partial name="~/Pages/Employee/Supplier/_AddEdit.cshtml" />
+        }
+    </div>
+</div>
+
+<partial name="~/Pages/Shared/ErrorPop.cshtml" />
+

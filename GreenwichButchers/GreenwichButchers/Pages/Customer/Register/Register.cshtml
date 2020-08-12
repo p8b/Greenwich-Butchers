@@ -1,0 +1,167 @@
+﻿@page "/Customer/Register/"
+@model GreenwichButchers.Pages.Customer.RegisterRCModel
+@using GreenwichButchers.SystemClasses
+@using GreenwichButchers.Models
+@{
+    ViewData["Title"] = "Customer Registration";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+
+    #region Page Login Check
+    // Check the login status of the user by passing the "Cookie"
+    // To the Constructor of "LoginCheck" class.
+    var _LoginCheck = new LoginCheck(Request.Cookies["Cookie"] ?? "", true);
+
+    // If User Login status is true (Successful)
+    if (CUser.LoginStatus)
+    {
+        // Check User's Role
+        switch (CUser.UserRole)
+        {
+            // The Current view is only accessible if the user has "Manager" or
+            // Staff role
+            case "Manager":
+            case "Staff":
+                break;
+            // If the user is customer
+            case "Customer":
+                // Redirect the user to index page
+                Response.Redirect("/Index", false);
+                break;
+        }
+        // Overwrite the Cookie with new hash value
+        Response.Cookies.Append("Cookie", _LoginCheck.cookieEncryptM.HashCookieID);
+    }
+    #endregion
+
+    // Set the attributes of basket icon in the menu to hidden
+    ViewData["CustomerBasketVisibility"] = "hidden";
+}
+
+@section Scripts{
+    <script type="text/javascript" src="~/js/RegisterCustomerJS.js"></script>
+}
+@* Header *@
+<div class="breadcrumb-item  border-bottom pb-0 border-success">
+    <a class="text-black-50">
+        <h3>Customer <small id="lblShowPageNum">Registration 1 of 2</small></h3>
+    </a>
+</div>
+@* Show admin access buttons *@
+@if (CUser.UserRole != null && (CUser.UserRole.ToString() == "Manager" || CUser.UserRole.ToString() == "Staff"))
+{
+    @* Navigation Buttons*@
+    <nav class="nav nav-pills mb-3 flex-column flex-sm-row text-center border-bottom">
+        @* Modify Customer Button *@
+        <a href="/Customers" class="nav-link btn btn-light flex-sm-fill">Edit Customer</a>
+        @* Add Customer Navigation Button *@
+        <a href="/Customer/Register" class="nav-link btn btn-light flex-sm-fill active">Register Customer</a>
+    </nav>
+    <div id="PanelControllE">@ViewData["PanelControllE"]</div>
+}
+<form method="post">
+    <div id="RegPage1" class="row">
+        <div class="form-group col-sm-6">
+            <div class="form-row">
+                @* Title *@
+                <div class="col-form-label">Title</div>
+                <div class="col-sm-12">
+                    <select id="txtTitle" class="form-control col-sm-4 mr-auto" asp-for="@Model._Customer.Title">
+                        <option selected>Mr</option>
+                        <option>Miss</option>
+                        <option>Mrs</option>
+                    </select>
+                </div>
+
+                @* Name *@
+                <label class="col-form-label" for="txtName">Name <small id="lbltxtName" class="text-red"></small></label>
+                <input id="txtName" asp-for="@Model._Customer.Name" onkeyup="AlphabeticCheck(id, true)" type="text" class="form-control" />
+
+                @* Surname *@
+                <label class="col-form-label" for="txtSurname">Surname  <small id="lbltxtSurname" class="text-red"></small></label>
+                <input id="txtSurname" asp-for="@Model._Customer.Surname" onkeyup="AlphabeticCheck(id, true)" type="text" class="form-control" />
+
+                @* Tel *@
+                <label class="col-form-label" for="txtTel">Tel. <small id="lbltxtTel" class="text-red"></small></label>
+                <input id="txtTel" asp-for="@Model._Customer.Tel" onkeyup="TelChecker(id, true)" type="tel" class="form-control" />
+
+                @* Company *@
+                <label class="col-form-label" for="txtCompany">Company  <small id="lbltxtCompany" class="text-red"></small></label>
+                <input id="txtCompany" asp-for="@Model._Customer.Company" class="form-control" type="text" value="" />
+            </div>
+        </div>
+        <div class="form-group col-sm-6">
+            <div class="form-row">
+                @* Address Name *@
+                <label class="col-form-label" for="txtAddressName">Address Name  <small id="lbltxtAddressName" class="text-red"></small></label>
+                <input id="txtAddressName" asp-for="@Model._Address.AddressName" onkeyup="FieldRequiredCheck(id)" type="text" class="form-control" value="Default" />
+
+                @* First Line *@
+                <label class="col-form-label" for="txtFirstLine">First Line  <small id="lbltxtFirstLine" class="text-red"></small></label>
+                <input id="txtFirstLine" asp-for="@Model._Address.FirstLine" onkeyup="FieldRequiredCheck(id)" type="text" class="form-control" />
+
+                @* Second Line *@
+                <label class="col-form-label" for="txtSecondLine">Second Line <small id="lbltxtSecondLine" class="text-red"></small></label>
+                <input id="txtSecondLine" asp-for="@Model._Address.SecondLine" type="text" class="form-control" />
+
+                @* City *@
+                <label class="col-form-label" for="txtCity">City  <small id="lbltxtCity" class="text-red"></small></label>
+                <input id="txtCity" asp-for="@Model._Address.City" onkeyup="FieldRequiredCheck(id)" class="form-control" type="text" />
+                @* Postcode *@
+                <label class="col-form-label">Postcode <small id="lbltxtPostcode" class=""></small></label>
+                <input id="txtPostcode" asp-for="@Model._Address.PostCode" onkeyup="PostcodeCheckUK(id,true)" class="form-control" type="text" />
+            </div>
+
+            @* Continue to part two of the registration (button) *@
+            <div class="form-row">
+                <a id="ShowPanel2" class="col-sm-6 btn btn-secondary text-white ml-auto mt-2" onclick="Panel1SubmitCheck(this.id)">
+                    Continue
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div id="RegPage2" class="row" hidden="hidden">
+        @* Second part of the registration *@
+        <div class="form-group col-sm-6">
+            @* Email and password *@
+            <div class="form-row">
+                @* Email *@
+                <label class="col-form-label" for="txtEmail">Email  <small id="lbltxtEmail" class="text-red"></small></label>
+                <input id="txtEmail" asp-for="@Model._Customer.Email" onkeyup="ContainsValidEmail(id,true)" class="form-control" type="email" autocomplete="new-password" />
+
+                <label class="col-form-label" for="txtPassword">Password <small id="lbltxtPassword" class=""></small></label>
+                <input id="txtPassword" asp-for="@Model._Customer.Password" onkeyup="ConfirmPassCheck(id)" class="form-control" type="password" autocomplete="new-password" />
+
+                @* Confirm Password *@
+                <label class="col-form-label" for="txtPasswordConfirm">Confirm Password <small id="lbltxtPasswordConfirm" class=""></small></label>
+                <input id="txtPasswordConfirm" asp-for="@Model._Customer.Password" onkeyup="ConfirmPassCheck(id)" class="form-control" type="password" autocomplete="new-password" />
+            </div>
+            <div class="form-row mt-2">
+                @* Terms and condition and Subscribe mailing list check boxes *@
+                <div class="col-6">
+                    <div class="custom-control custom-checkbox mr-sm-2">
+                        <input type="checkbox" asp-for="@Model.AgreeTerms" class="custom-control-input is-invalid" id="CheckTerms" onchange="CheckboxCss(id)" />
+                        <label class="custom-control-label" for="CheckTerms">Agree the terms and conditions.</label>
+                    </div>
+                    <div class="custom-control custom-checkbox mr-sm-2">
+                        <input type="checkbox" asp-for="@Model.SubscribeMailing" class="custom-control-input " id="MailingList" onchange="CheckboxCss(id)" />
+                        <label class="custom-control-label " for="MailingList">Subscribe to Mailing List</label>
+                    </div>
+                </div>
+                @* Confirm and back (button) *@
+                <div class="col-6">
+                    <button class="col-12 btn btn-secondary mt-1" onclick="return Panel2ConfirmCheck()" asp-page-handler="RegisterCustomer">
+                        Confirm
+                    </button>
+                    @*Go back to part two of registration *@
+                    <a id="ShowPanel1" class="col-12 btn btn-secondary text-white mt-1" onclick="CustomerRegPanelSwitch(this.id)">
+                        Back
+                    </a>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</form>
+
+<partial name="~/Pages/Shared/ErrorPop.cshtml" />

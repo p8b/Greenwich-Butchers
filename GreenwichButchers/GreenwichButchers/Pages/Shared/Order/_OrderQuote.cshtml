@@ -1,0 +1,137 @@
+﻿@model GreenwichButchers.Pages.Shared.OrderRCModel
+@* Display order items for Employee View *@
+<div class="form-group row">
+    <h4>Order Items</h4>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th scope="col">#</th>
+                <th scope="col">Product Name</th>
+                <th scope="col">Price</th>
+                <th scope="col">Quantity</th>
+                <th scope="col">Quote List</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model?._Order?.ItemList != null)
+            {
+                @for (var i = 0; i < Model._Order.ItemList.Count; i++)
+                {
+                    <tr>
+                        <td>
+                            @{var rowNum = i + 1;}
+                            @rowNum
+                        </td>
+                        <td>@Model._Order.ItemList[i].ProductName <small>(@Model._Order.ItemList[i].CategoryName)</small></td>
+                        <td>£<font id="txtItemPriceQuote_@i">@Model._Order.ItemList[i].ItemPrice</font> <font> Per @Model._Order.ItemList[i].RetailUnit</font>
+                        </td>
+                        <td>
+                            @Model._Order.ItemList[i].ItemQuantity 
+                            <input hidden="hidden" id="txtQuantity_@i" value="@Model._Order.ItemList[i].ItemQuantity" />
+                        </td>
+                        <td>
+                            <div class="col-12">
+                                <div class="row">
+                                    <select class="show form-control" asp-for="_Order.ItemList[i]._ItemQuote.QuoteID" id="DDQuote_@i" onchange="CalculateItemPrice(this.id)">
+                                        @if (Model._Order.ItemList[i]?._QuoteList.Count > 1 )
+                                        {
+                                            <option class="show" selected value="0">----Select Quote----</option>
+                                            @foreach (var item in Model._Order.ItemList[i]?._QuoteList)
+                                            {
+                                                <option value="@item.QuoteID" class="font-weight-bold">@item.Company</option>
+
+                                                <option id="txtQuotePrice_@item.QuoteID" value="@item.QuotePrice" class="shadow" disabled>
+                                                    -- Price per @Model._Order.ItemList[i].RetailUnit: £@item.QuotePrice
+                                                </option>
+
+                                                <option class="shadow" disabled>-- Delivery Date: @item.QuoteDeliveryDate</option>
+                                            }
+                                        }
+                                        else if (Model._Order.ItemList[i]?._QuoteList.Count == 1)
+                                        {
+
+                                            @foreach (var item in Model._Order.ItemList[i]?._QuoteList)
+                                            {
+                                                <option value="@item.QuoteID" class="font-weight-bold">@item.Company</option>
+                                                <option id="txtQuotePrice_@item.QuoteID" value="@item.QuotePrice" class="shadow" disabled>
+                                                    -- Price per @Model._Order.ItemList[i].RetailUnit: £@item.QuotePrice
+                                                </option>
+
+                                                <option class="shadow" disabled>-- Delivery Date: @item.QuoteDeliveryDate</option>
+                                            }
+                                        }
+                                    </select>
+                                    <div class="invalid-feedback">Missing Quote</div>
+                                </div>
+                            </div>
+                        </td>
+                        @if ((CUser.UserRole == "Staff" ||CUser.UserRole == "Manager") && Model?._Order?.Status != "Complete")
+                        {
+                                <td>
+                                    @* Add Quote Button *@
+                                    <a class="btn btn-info col text-white" data-toggle="modal" data-target=".QuoteModal_@i">Add/Edit Quote</a>
+                                    @* Add Quote information inputs Model *@
+                                    <div class="modal fade QuoteModal_@i" tabindex="-1" role="dialog" aria-hidden="true">
+                                <div class="modal-dialog modal-body">
+                                    <div class="modal-content row bg-light">
+                                        @* Header *@
+                                        <h4 class="col-12 mt-2 border-bottom">Add Quote for @Model._Order.ItemList[i].ProductName <small>(@Model._Order.ItemList[i].CategoryName)</small> </h4>
+                                        <input type="hidden" asp-for="@Model._Order.ItemList[i].ProductName" value="@Model._Order.ItemList[i].ProductName" />
+                                        <input type="hidden" asp-for="@Model._Order.ItemList[i].ItemID" value="@Model._Order.ItemList[i].ItemID" />
+                                        @* Supplier Drop Down *@
+                                        <div class="col-12">
+                                            <small class="col p-0 font-weight-bold">Supplier</small>
+                                            <select id="txtSupplier_@i" class="form-control" asp-for="_Order.ItemList[i]._ItemQuote.SupplierID">
+                                                @foreach (var item in Model._SuppliersList)
+                                                {
+                                                    <option class="font-weight-bold" value="@item.SupplierID">@item.Company</option>
+                                                    @foreach (var cat in item.CategoryList)
+                                                    {
+                                                        <option class="small btn-outline-info" disabled>@cat.CategoryName</option>
+                                                    }
+                                                }
+                                            </select>
+                                        </div>
+                                        @* Quote Price*@
+                                        <div class="col-12">
+                                            <small class="col p-0 font-weight-bold">Quote Price (£) per @Model._Order.ItemList[i].RetailUnit</small>
+                                            <input id="txtQuotePrice_@i" class="form-control" type="text" asp-for="_Order.ItemList[i]._ItemQuote.QuotePrice" value="@Model._Order.ItemList[i]?._ItemQuote?.QuotePrice" />
+                                        </div>
+                                        @* Quote Delivery Date*@
+                                        <div class="col-12 mb-2">
+                                            <small class="col p-0 font-weight-bold">Quote Delivery Date</small>
+                                            <input id="txtQuotePrice_@i" asp-for="_Order.ItemList[i]._ItemQuote.QuoteDeliveryDate" value="@Model._Order?.DeliveryDate" onchange="DateChecker(this.id)" type="Date" class="form-control" />
+                                        </div>
+                                    </div>
+                                    <div class="modal-content row bg-transparent">
+                                        <button class="col-12 btn btn-success" asp-route-PName="@Model._Order.ItemList[i].ProductName" asp-page-handler="AddQuote" data-toggle="modal" data-target=".QuoteModal_@i">
+                                            Add
+                                        </button>
+                                        <button class="col-12 btn btn-danger" type="button" data-toggle="modal" data-target=".QuoteModal_@i">
+                                            Cancel
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                                </td>
+                        }
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+    <div class="container">
+        <div class="col-6 ml-auto">
+            <div class="form-row"><span class="font-weight-bold">Total: &ensp;</span><div id="txtOrderTotalPriceQ">0.00</div></div>
+            <div class="form-row"><span class="font-weight-bold">Total Items: &ensp;</span>@Model?._Order?.ItemList?.Count</div>
+            @if(Model?._Order?.Status != "Complete")
+            {
+                <div class="form-row">
+                    <button class="col-12 btn btn-success" id="@Model?._Order?.ItemList?.Count" onclick="return ConfirmQuoteCheck(this.id)" asp-route-ItemId="@Model?._Order?.OrderID"asp-page-handler="ConfirmQuotes">
+                        Confirm Quotes
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+</div>

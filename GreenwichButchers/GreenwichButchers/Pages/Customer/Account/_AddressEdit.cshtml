@@ -1,0 +1,122 @@
+﻿@model GreenwichButchers.Pages.Customer.AccountRCModel
+<form method="post">
+    <div class="tab-content">
+        <div class="tab-pane fade active show">
+            <div class="form-group row">
+
+                <div class="col-6 mt-auto">
+                    @* Drop-down address selector *@
+                    <div class="dropdown form-row">
+                        <button class="btn btn-secondary dropdown-toggle col-sm-6" type="button" id="AddressList" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            Select Address
+                        </button>
+                        <div class="dropdown-menu dropdown-menu-right col-sm-6" aria-labelledby="AddressList">
+                            @if (Model._Customer != null && Model._Customer.AddressList != null)
+                            {
+                                @*Loop through the customer addresses*@
+                                @for (var i = 0; i < Model._Customer.AddressList.Count; i++)
+                                {
+                                    <input type="hidden" asp-for="@Model._Customer.AddressList[i].AddressID" />
+                                    // Add each address as an item in the drop-down menu
+                                    <a class="dropdown-item " href="/Customer/Account/EditAddress/0/@Model._Customer.AddressList[i].AddressID">
+                                        <small>@Model._Customer.AddressList[i].AddressName</small><br />
+                                        <small>@Model._Customer.AddressList[i].FirstLine</small><br />
+                                        @* If second line is empty skip it *@
+                                        @if (@Model._Customer.AddressList[i].SecondLine != "")
+                                        {
+                                            <small>@Model._Customer.AddressList[i].SecondLine</small><br />
+                                        }
+                                        <small>@Model._Customer.AddressList[i].City</small>
+                                        <small>@Model._Customer.AddressList[i].PostCode</small>
+                                    </a>
+                                }
+                                if (Model._Customer.AddressList.Count == 0)
+                                {
+                                    <div class="text-danger">No Addresses found</div>
+                                }
+                            }
+
+
+                        </div>
+                        <div class="col-6">
+                            <a href="/Customer/Account/NewAddress" class="btn btn-secondary col-12">
+                                New Address
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6">
+                    @if (Model._Address != null && Model._Address.AddressID != 0)
+                    {
+                        <input type="hidden" asp-for="_Address.AddressID" value="@Model._Address.AddressID" />
+                    }
+                    @* address Name *@
+                    <label class="col-form-label" for="txtAddressName">Address Name <small id="lbltxtAddressName" class="text-red"></small></label>
+                    <input id="txtAddressName" asp-for="@Model._Address.AddressName" onkeyup="FieldRequiredCheck(id)" type="text" class="form-control" value="@Model._Address.AddressName" />
+                </div>
+                <div class="col-12">
+                    @* First Line *@
+                    <label class="col-form-label" for="txtFirstLine">First Line  <small id="lbltxtFirstLine" class="text-red"></small></label>
+                    <input id="txtFirstLine" asp-for="@Model._Address.FirstLine" onkeyup="FieldRequiredCheck(id)" type="text" class="form-control" value="@Model._Address.FirstLine" />
+                </div>
+                <div class="col-12">
+                    @* Second Line *@
+                    <label class="col-form-label" for="txtSecondLine">Second Line <small id="lbltxtSecondLine" class="text-red"></small></label>
+                    <input id="txtSecondLine" asp-for="@Model._Address.SecondLine" type="text" class="form-control" value="@Model._Address.SecondLine" />
+                </div>
+                <div class="col-6">
+                    @* City *@
+                    <label class="col-form-label" for="txtCity">City  <small id="lbltxtCity" class="text-red"></small></label>
+                    <input id="txtCity" asp-for="@Model._Address.City" onkeyup="FieldRequiredCheck(id)" class="form-control" type="text" value="@Model._Address.City" />
+                </div>
+                <div class="col-6">
+                    @* Postcode *@
+                    <label class="col-form-label" for="txtPostcode">Postcode  <small id="lbltxtPostcode" class=""></small></label>
+                    <input id="txtPostcode" asp-for="@Model._Address.PostCode" onkeyup="PostcodeCheckUK(id)" class="form-control" type="text" value="@Model._Address.PostCode" />
+                </div>
+                <div class="col-6 ml-auto">
+                    @if (Model._Address != null && Model._Address.AddressID != 0)
+                    {
+                        @* Update Address Details button *@
+                        <div class="col-12">
+                            <button class="col-12 btn btn-success mt-lg-3" onclick="return AddressChanges()" asp-page-handler="UpdateAddress">
+                                Update Changes
+                            </button>
+                        </div>
+                        @* Delete Product Button *@
+                        <div class="col-12 mt-1">
+                            <button class="btn btn-danger col-12" type="button" data-toggle="modal" data-target=".DeleteAddressModal">Delete Address</button>
+                            @* Delete Confirmation Model *@
+                            <div class="modal fade DeleteAddressModal" tabindex="-1" role="dialog" aria-hidden="true">
+                                <div class="modal-dialog modal-body">
+                                    <div class="modal-content row bg-light">
+                                        <h4 class="col-12 mt-2 border-bottom">Confirmation</h4>
+                                        <p class="col-12 mt-1">
+                                            Are you sure you would like to delete the currently selected address?
+                                        </p>
+                                    </div>
+                                    <div class="modal-content row bg-transparent">
+                                        <button class="col-12 btn btn-danger" data-toggle="modal" data-target=".DeleteAddressModal" asp-page-handler="DeleteAddress">
+                                            Delete
+                                        </button>
+                                        <button class="col-12 btn btn-success" type="button" data-toggle="modal" data-target=".DeleteAddressModal">
+                                            Cancel
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        @* Add Address Details button *@
+                        <button class="col-12 btn btn-success mt-lg-3" asp-page-handler="AddAddress" onclick="return AddressChanges()" name="CusID" value="@Model._Customer.CustomerID">
+                            Add New Address
+                        </button>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+</form>

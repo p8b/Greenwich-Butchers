@@ -1,0 +1,105 @@
+﻿@page "/Customer/Account/{IDFor?}/{CusID?}/{AddID?}/{OrderID?}"
+@using GreenwichButchers.Models
+@using GreenwichButchers.SystemClasses
+@model GreenwichButchers.Pages.Customer.AccountRCModel
+@{
+    ViewData["Title"] = "CustomerAccount";
+    Layout = "~/Pages/Shared/_Layout.cshtml"; // Reference to the layout partial page
+
+    #region Page Login Check
+    // Check the login status of the user by passing the "Cookie"
+    // To the Constructor of "LoginCheck" class.
+    var _LoginCheck = new LoginCheck(Request.Cookies["Cookie"] ?? "", true);
+
+    // If User Login status is true (Successful)
+    if (CUser.LoginStatus
+        && (CUser.UserRole == "Manager"
+            || CUser.UserRole == "Staff"
+            || CUser.UserRole == "Customer"))
+    {
+        // Overwrite the Cookie with new hash value
+        Response.Cookies.Append("Cookie", _LoginCheck.cookieEncryptM.HashCookieID);
+    }
+    else // Else Login status is false (Failed)
+    {
+        // Redirect the user to login page
+        Response.Redirect("/Login", false);
+        // Delete the Cookie incase it exists
+        Response.Cookies.Delete("Cookie", new Microsoft.AspNetCore.Http.CookieOptions { Expires = DateTime.Now });
+        return;
+    }
+    #endregion
+
+    // Set the attributes of basket icon in the menu
+    if (Request.Cookies["Basket"] != null)
+    {
+        var SecureCookie = new CookieEncryptM();
+
+        if (!SecureCookie.Read(Request.Cookies["Basket"]))
+        {
+            Response.Cookies.Delete("Basket", new Microsoft.AspNetCore.Http.CookieOptions { Expires = DateTime.Now });
+            Response.Redirect("index", false);
+            return;
+        }
+
+        // extract the order object from the cookie
+        var order = (OrderM)(new ObjectConvert().String64ToObject(SecureCookie.Base64Value));
+        // Set the visibility to null
+        ViewData["CustomerBasketVisibility"] = "";
+        ViewData["BasketCount"] = order?.ItemList?.Count.ToString() ?? "0";
+    }
+    else
+    {
+        ViewData["CustomerBasketVisibility"] = "hidden";
+        ViewData["BasketCount"] = '0';
+
+    }
+}
+@* import Page specific JavaScript *@
+@section Scripts{
+    <script type="text/javascript" src="~/js/CustomersJS.js"></script>
+}
+@* Header Employee *@
+<div class="breadcrumb-item  border-bottom pb-0 border-success">
+    <a class="text-black-50">
+        <h3>@ViewData["CustomerModifyTitle"] <small>ID @Model?._Customer?.CustomerID</small> </h3>
+    </a>
+</div>
+@* Navigation Buttons for employees *@
+<nav class="nav nav-pills flex-column flex-sm-row text-center border-bottom">
+    @if (CUser.UserRole != null && (CUser.UserRole.ToString() == "Manager" || CUser.UserRole.ToString() == "Staff"))
+    {
+        if(TempData["OrderID"] != null)
+        {
+            @* Back to Customer's order Button *@
+            <a  href="/Order/ViewOrder/@TempData["OrderID"]" class="nav-link btn btn-light flex-sm-fill">Back</a>
+
+        } else
+        {
+            @* Back to search customer Button *@
+            <a href="/Customers" class="nav-link btn btn-light flex-sm-fill">Back</a>
+        }
+    }
+    @* Modify Customer Account Button *@
+    <a href="/Customer/Account/Edit" class="nav-link btn btn-light flex-md-fill @ViewData["Edit"]">Customer Account</a>
+    @* Modify Customer Address Button *@
+    <a href="/Customer/Account/AddressEdit" class="nav-link btn btn-light flex-md-fill @ViewData["AddressEdit"]">Customer Addresses</a>
+</nav>
+
+<div class="container">
+    @* Navigation Panels *@
+    <div class="tab-content" id="pills-tabContent">
+        @* Modify Customer Account Panel *@
+        @if (ViewData["Edit"] != null)
+        {
+            <partial name="~/Pages/Customer/Account/_Edit.cshtml" />
+        }
+        @* Modify Customer Address Panel *@
+        @if (ViewData["AddressEdit"] != null)
+        {
+            <partial name="~/Pages/Customer/Account/_AddressEdit.cshtml" />
+        }
+    </div>
+</div>
+
+<partial name="~/Pages/Shared/ErrorPop.cshtml" />

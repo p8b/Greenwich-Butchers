@@ -1,0 +1,262 @@
+﻿@page "/Employees/"
+@model GreenwichButchers.Pages.Employee.EmployeesRCModel
+@using GreenwichButchers.SystemClasses
+@{
+    ViewData["Title"] = "Employee";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+
+    #region Page Login Check
+    // Check the login status of the user by passing the "Cookie"
+    // To the Constructor of "LoginCheck" class.
+    var _LoginCheck = new LoginCheck(Request.Cookies["Cookie"] ?? "", true);
+
+    // If User Login status is true (Successful)
+    if (CUser.LoginStatus)
+    {
+        // Check User's Role
+        switch (CUser.UserRole)
+        {
+            // The Current view is only accessible if the user has "Manager" or
+            // Staff role
+            case "Manager":
+                break;
+            case "Staff":
+            // If the user is customer
+            case "Customer":
+                // Redirect the user to index page
+                Response.Redirect("/Index", false);
+                break;
+        }
+        // Overwrite the Cookie with new hash value
+        Response.Cookies.Append("Cookie", _LoginCheck.cookieEncryptM.HashCookieID);
+    }
+    else // Else Login status is false (Failed)
+    {
+        // Redirect the user to login page
+        Response.Redirect("/Login", false);
+        // Delete the Cookie incase it exists
+        Response.Cookies.Delete("Cookie", new Microsoft.AspNetCore.Http.CookieOptions { Expires = DateTime.Now });
+        return;
+    }
+    #endregion
+
+}
+@* import Page specific JavaScript *@
+@section Scripts{
+    <script type="text/javascript" src="~/js/EmployeeJS.js"></script>
+}
+@* Header *@
+<div class="breadcrumb-item  border-bottom pb-0 border-success">
+    <a class="text-black-50">
+        <h3>Employee</h3>
+    </a>
+</div>
+
+@* Main Body *@
+<div class="container">
+    <div class="tab-content" id="pills-tabContent">
+        @* Search box *@
+        <form method="post" class="row">
+            <div class="col-sm-12 pb-3">
+                <div class="form-row ">
+                    @* Search Box *@
+                    <div class="col-sm-6">
+                        <div class="col-form-label" for="txtSearchBox">Search Employee by Name, Surname, Email or Employee ID</div>
+                        <input id="txtSeachBox" class="form-control" type="text" asp-for="_SearchValue" placeholder="Search" />
+                    </div>
+                    <div class="col-sm-2 mt-auto">
+                        @* Search Employee  Button *@
+                        <button class="btn btn-secondary col text-white" asp-page-handler="SearchEmployee">Search</button>
+                    </div>
+                    <div class="col-sm-2 mt-auto">
+                        @* Show All Employee  Button *@
+                        <button class="btn btn-secondary col text-white" asp-page-handler="ShowAllEmployee">Show All</button>
+                    </div>
+                    <div class="col-sm-2 mt-auto">
+                        @* Create New Employee Button *@
+                        <a class="btn btn-secondary col text-white" href="/Account?handler=NewEmp">New Employee</a>
+                    </div>
+                </div>
+            </div>
+
+            @* Search result *@
+            <div class="col-sm-12 pb-3">
+                @* Check if Supplier list has objects *@
+                @if (Model != null && Model._EmployeeList != null && Model._EmployeeList?.Count != 0)
+                {
+                    // The default page number
+                    int PageNum = 1;
+                    // Used to  decide whether to show the record (true) or not (false)
+                    var ShowRecord = false;
+                    // Set the total number of pages
+                    var TotalPages = 1;
+
+                    // Check if total number of searched Suppliers is less than the amount set to be shown per page
+                    if (Model._EmployeeList.Count > Model._ShowItemPerPage)
+                    {
+                        // divide the total number of orders by the amount set to be shown per page and round it up to the
+                        // nearest whole number
+                        TotalPages = Convert.ToInt32(Math.Ceiling((double)Model._EmployeeList.Count / Model._ShowItemPerPage));
+                        if (TotalPages == 0)
+                        {
+                            TotalPages = 1;
+                        }
+                    }
+
+                    @* Drop down menu to choose the amount of search items to show per page *@
+                    <div class="row">
+                        <nav class="col-sm-6">
+                            <ul class="pagination mb-0 pb-0">
+                                <li class="page-item">
+                                    <div class="dropdown">
+                                        <button class="btn dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                            Show @Model._ShowItemPerPage Items Per Page
+                                        </button>
+                                        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                                            @* Starting from 10 add 5 each time until 50 (Included) *@
+                                            @for (var RecPerPageH = 5; RecPerPageH <= 30; RecPerPageH++)
+                                            {
+                                                <button class="dropdown-item" onclick="return Set_ShowPageNum(this.id)" id="@RecPerPageH" asp-page-handler="PageController">@RecPerPageH</button>
+                                                RecPerPageH += 4;
+
+                                            }
+                                        </div>
+                                        @* Hidden elements to hold the values for total page number and total shown items per page*@
+                                        <input id="ShowPageNumItem" type="hidden" asp-for="_ShowItemPerPage" value="@Model._ShowItemPerPage" />
+                                        <input id="TotalPages" type="hidden" value="@TotalPages" />
+                                    </div>
+                                </li>
+                            </ul>
+                        </nav>
+                        @* Shows the total number of search records found *@
+                        <div class="mt-auto ml-auto mr-1"><font size="3" class="col">Records Found: @Model._EmployeeList.Count</font></div>
+                    </div>
+
+                    @* Result table *@
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th scope="col">Employee #</th>
+                                <th scope="col">Full Name</th>
+                                <th scope="col">Email</th>
+                                <th scope="col">Position</th>
+                                <th scope="col"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                            @* Load all the Employee from the Employee list *@
+                            @for (var i = 0; i < Model._EmployeeList.Count; i++)
+                            {
+                                // if the current item falls within the Show item per page
+                                if ((i + 1) % Model._ShowItemPerPage != 0)
+                                {
+                                    // find the page number of the item
+                                    PageNum = ((i + 1) / Model._ShowItemPerPage) + 1;
+
+                                    // if the item page number and the current selected page
+                                    // number is equal
+                                    if (PageNum == Model._ShowPageNum)
+                                    {
+                                        // show the current item
+                                        ShowRecord = true;
+                                    }
+                                    else // else do not show the current item
+                                    {
+                                        ShowRecord = false;
+                                    }
+                                }
+                                // Filter the item according to their page
+                                if (ShowRecord)
+                                {
+                                    // Hidden element to pass the current page number to the server side
+                                    <tr hidde="hidden"><td hidden="hidden"><input hidden="hidden" name="currentPageNum" value="@PageNum" /></td></tr>
+
+                                    <tr>
+                                        <th scope="row">@Model._EmployeeList[i].EmployeeID</th>
+                                        <td>@Model._EmployeeList[i].Title @Model._EmployeeList[i].Name @Model._EmployeeList[i].Surname</td>
+                                        <td>@Model._EmployeeList[i].Email</td>
+                                        <td>@Model._EmployeeList[i].Position</td>
+                                        <td>
+                                            <div class="row">
+                                                @* View more detail Button*@
+                                                <button id="btnViewMore_@i" onclick="return SelectEmployee(this.id)"
+                                                        asp-route-SelectedEmpID="@Model._EmployeeList[i].EmployeeID"
+                                                        asp-page-handler="ViewDetailsEmp"
+                                                        class="w-100 btn btn-info col-6">
+                                                    View Details
+                                                </button>
+                                                @if (CUser.UserRole != null && (CUser.UserRole.ToString() == "Manager"))
+                                                {
+                                                    @* Delete Product Button *@
+                                                    <button class="btn btn-danger col-6" type="button" data-toggle="modal" data-target=".DeleteEmployeeModal_@i">Delete</button>
+                                                    @* Delete Confirmation Model *@
+                                                    <div class="modal fade DeleteEmployeeModal_@i" tabindex="-1" role="dialog" aria-hidden="true">
+                                                        <div class="modal-dialog modal-body">
+                                                            <div class="modal-content row bg-light">
+                                                                <h4 class="col-12 mt-2 border-bottom">Confirmation</h4>
+                                                                <p class="col-12 mt-1">
+                                                                    Are you sure you would like to delete @Model._EmployeeList[i].Title @Model._EmployeeList[i].Name @Model._EmployeeList[i].Surname Account?
+                                                                </p>
+                                                            </div>
+                                                            <div class="modal-content row bg-transparent">
+                                                                <button class="col-12 btn btn-danger" data-toggle="modal" data-target=".DeleteEmployeeModal_@i" id="btnDelete_@i" onclick="return SelectEmployee(this.id)" asp-route-SelectedEmpID="@Model._EmployeeList[i].EmployeeID" asp-page-handler="DeleteEmployee">
+                                                                    Delete
+                                                                </button>
+                                                                <button class="col-12 btn btn-success" type="button" data-toggle="modal" data-target=".DeleteEmployeeModal_@i">
+                                                                    Cancel
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                }
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+
+                    @* Pagination for search result *@
+                    <div class="row">
+                        <nav class="col-8">
+                            <ul id="UlPagination" class="pagination mb-0 pb-0">
+                                <li class="page-item disabled"><Button class="page-link" aria-disabled="true">@TotalPages Pages:</Button></li>
+                                <li class="page-item">
+                                    <a class="page-link" onclick="PreviousPagination()" aria-label="Previous">
+                                        <span aria-hidden="true">&laquo;</span>
+                                    </a>
+                                </li>
+                                @* Load page numbers according to total page numbers received from server side*@
+                                @for (var c = 1; c <= TotalPages; c++)
+                                {
+                                    if (Model._ShowPageNum == c)
+                                    {
+                                        <li id="LiPage_@c" class="page-item active"><button id="Pagebtn__@c" class="page-link" name="ShowPageNum" value="@c" asp-page-handler="PageController">@c</button></li>
+                                    }
+                                    else
+                                    {
+                                        <li id="LiPage_@c" class="page-item"><button id="Pagebtn__@c" class="page-link" name="ShowPageNum" value="@c" asp-page-handler="PageController">@c</button></li>
+                                    }
+                                }
+                                <li class="page-item">
+                                    <a class="page-link" onclick="return NextPagination()" aria-label="Next">
+                                        <span aria-hidden="true">&raquo;</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                }
+                // Else No record is found
+                else if (ViewData["NoRecordsFound"] != null && (bool)ViewData["NoRecordsFound"] == true)
+                {
+                    <font class="row"><small class="col-12">No Records found</small></font>
+                }
+            </div>
+        </form>
+    </div>
+</div>
+
+<partial name="~/Pages/Shared/ErrorPop.cshtml" />

@@ -1,0 +1,125 @@
+﻿@model GreenwichButchers.Pages.Customer.AccountRCModel
+<form method="post">
+    <div class="tab-content">
+        <div class="tab-pane fade active show">
+            <div class="form-group row">
+                @* Title *@
+                <div class="col-12">
+                    <input type="hidden" asp-for="_Customer.CustomerID" value="@Model?._Customer?.CustomerID" />
+                    <label class="col-form-label" for="txtTitle">Title</label>
+                    <select id="txtTitle" class="form-control col-sm-2 mr-auto" asp-for="@Model._Customer.Title">
+                        <option selected>Mr</option>
+                        <option>Miss</option>
+                        <option>Mrs</option>
+                    </select>
+                </div>
+                <div class="col-6">
+                    @* Name *@
+                    <label class="col-form-label" for="txtName">Name <small id="lbltxtName" class="text-red"></small></label>
+                    <input id="txtName" asp-for="@Model._Customer.Name" onkeyup="AlphabeticCheck(id, true)" type="text" class="form-control" />
+                </div>
+                <div class="col-6">
+                    @* Surname *@
+                    <label class="col-form-label" for="txtSurname">Surname  <small id="lbltxtSurname" class="text-red"></small></label>
+                    <input id="txtSurname" asp-for="@Model._Customer.Surname" onkeyup="AlphabeticCheck(id, true)" type="text" class="form-control" />
+                </div>
+                <div class="col-6">
+                    @* Company *@
+                    <label class="col-form-label" for="txtCompany">Company  <small id="lbltxtCompany" class="text-red"></small></label>
+                    <input id="txtCompany" asp-for="@Model._Customer.Company" class="form-control" type="text" />
+                </div>
+                <div class="col-6">
+                    @* Email *@
+                    <label class="col-form-label" for="txtEmail">Email  <small id="lbltxtEmail" class="text-red"></small></label>
+                    <input id="txtEmail" asp-for="@Model._Customer.Email" onkeyup="ContainsValidEmail(id,true)" class="form-control" type="email" autocomplete="new-password" />
+                </div>
+                <div class="col-6">
+                    @* Tel *@
+                    <label class="col-form-label" for="txtTel">Tel. <small id="lbltxtTel" class="text-red"></small></label>
+                    <input id="txtTel" asp-for="@Model._Customer.Tel" onkeyup="TelChecker(id, true)" type="text" class="form-control" />
+                </div>
+                <div class="col-6 mt-auto ">
+                    <div class="form-row">
+                        <div class="col pl-lg-4 custom-checkbox float-right">
+                            <input type="checkbox" asp-for="@Model.SubscribeMailing" class="custom-control-input" id="MailingList" onchange="CheckboxCss(id)" />
+                            <label class="custom-control-label " for="MailingList">Subscribe to Mailing List</label>
+                        </div>
+                        <div class="col-6">
+                            <button id="PasswordModal" value="@ViewData["ShowPassModal"]" type="button" class="btn btn-secondary col-12" data-toggle="modal" data-target=".ChangePasswordModal">Change Password</button>
+                            <div class="modal fade ChangePasswordModal" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
+                                @* Back Button *@
+                                <div class="modal-dialog modal-body">
+                                    <div class="modal-content row">
+                                        @* Old Password *@
+                                        <div class="col-12">
+                                            <label class="col-form-label">Current Password <small id="lblOldPassword" class="text-red"></small></label>
+                                            <input id="OldPassword" name="OldPassword" class="form-control" type="password" autocomplete="new-password" />
+                                        </div>
+                                        @* Password *@
+                                        <div class="col-12">
+                                            <label class="col-form-label">New Password <small id="lbltxtNewPassword" class=""></small></label>
+                                            <input id="txtNewPassword" asp-for="@Model._Customer.Password" onkeyup="ConfirmPassCheck(id)" class="form-control" type="password" autocomplete="new-password" />
+                                        </div>
+                                        @* Confirm Password *@
+                                        <div class="col-12">
+                                            <label class="col-form-label">Confirm New Password <small id="lbltxtNewPasswordConfirm" class=""></small></label>
+                                            <input id="txtNewPasswordConfirm" asp-for="@Model._Customer.Password" onkeyup="ConfirmPassCheck(id)" class="form-control" type="password" autocomplete="new-password" />
+                                        </div>
+                                        <div class="col-12 mb-2 mt-2">
+                                            <div class="form-row">
+                                                @* Cancel *@
+                                                <a class="col-sm-6 btn p-1 text-white btn-secondary" data-toggle="modal" data-target=".ChangePasswordModal">
+                                                    Cancel
+                                                </a>
+                                                @* Submit Password Change *@
+                                                <button type="submit" class="col-sm-6 btn p-1 btn-success" onclick="return UpdatePassword()" asp-page-handler="UpdatePassword">
+                                                    Submit
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="col-6 ml-auto">
+                    <div class="col-12">
+                        <button class="col-12 btn btn-success mt-lg-3" onclick="return UpdateCustomerInfo()" asp-page-handler="UpdateCustomerInfo">
+                            Submit Changes
+                        </button>
+                    </div>
+                    @if (CUser.UserRole != null && (CUser.UserRole.ToString() == "Manager" || CUser.UserRole.ToString() == "Staff"))
+                    {
+                        @* Delete Product Button *@
+                        <div class="col-12 mt-1">
+                            <button class="btn btn-danger col-12" type="button" data-toggle="modal" data-target=".DeleteCustomerModal">Delete Customer</button>
+                            @* Delete Confirmation Model *@
+                            <div class="modal fade DeleteCustomerModal" tabindex="-1" role="dialog" aria-hidden="true">
+                                <div class="modal-dialog modal-body">
+                                    <div class="modal-content row bg-light">
+                                        <h4 class="col-12 mt-2 border-bottom">Confirmation</h4>
+                                        <p class="col-12 mt-1">
+                                            Are you sure you would like to delete @Model?._Customer?.Title @Model?._Customer?.Name @Model?._Customer?.Surname Account?
+                                        </p>
+                                    </div>
+                                    <div class="modal-content row bg-transparent">
+                                        <button class="col-12 btn btn-danger" data-toggle="modal" data-target=".DeleteCustomerModal" name="CusID" value="@Model?._Customer?.CustomerID" asp-page-handler="DeleteCustomer">
+                                            Delete
+                                        </button>
+                                        <button class="col-12 btn btn-success" type="button" data-toggle="modal" data-target=".DeleteCustomerModal">
+                                            Cancel
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</form>

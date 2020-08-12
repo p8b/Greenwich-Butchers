@@ -1,0 +1,103 @@
+﻿@page "/Login/{From?}"
+@model GreenwichButchers.Pages.Public.LoginRCModel
+@using GreenwichButchers.SystemClasses
+@using GreenwichButchers.Models
+@{
+    ViewData["Title"] = "Login";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+
+    // Check the login status of the user by passing the "Cookie"
+    // To the Constructor of "LoginCheck" class.
+    var _LoginCheck = new LoginCheck(Request.Cookies["Cookie"] ?? "", false);
+
+    // If User Login status is true (Successful)
+    if (CUser.LoginStatus)
+    {
+        // Redirect the user to index page
+        Response.Redirect("/Index", false);
+        return;
+    }
+
+    if (Model.ErrorMsg == "Wrong Password")
+    {
+        ViewData["WrongPass"] = "is-invalid";
+    }
+    else if (Model.ErrorMsg == "Wrong Email")
+    {
+        ViewData["WrongEmail"] = "is-invalid";
+    }
+    else if (Model.ErrorMsg == "Invalid login details")
+    {
+        ViewData["GeneralError"] = "is-invalid";
+    }
+    else if (Model.ErrorMsg == "* You Must Login/Create New Account To Continue With Your Order.")
+    {
+        ViewData["GeneralError"] = "is-invalid";
+    }
+
+    // Set the attributes of basket icon in the menu
+    if (Request.Cookies["Basket"] != null)
+    {
+        var SecureCookie = new CookieEncryptM();
+
+        if (!SecureCookie.Read(Request.Cookies["Basket"]))
+        {
+            Response.Cookies.Delete("Basket", new Microsoft.AspNetCore.Http.CookieOptions { Expires = DateTime.Now });
+            Response.Redirect("index", false);
+            return;
+        }
+
+        // extract the order object from the cookie
+        var order = (OrderM)(new ObjectConvert().String64ToObject(SecureCookie.Base64Value));
+        // Set the visibility to null
+        ViewData["CustomerBasketVisibility"] = "";
+        ViewData["BasketCount"] = order?.ItemList?.Count.ToString() ?? "0";
+    }
+    else
+    {
+        ViewData["CustomerBasketVisibility"] = "hidden";
+        ViewData["BasketCount"] = '0';
+
+    }
+}
+@* Header *@
+<div class="row">
+    <div class=" col-12 breadcrumb-item  border-bottom pb-0 border-success">
+        <a class="text-black-50">
+            <h3>Login</h3>
+        </a>
+    </div>
+</div>
+<form method="post">
+    <div class="row justify-content-center pl-3 pr-3">
+        <div class="col-sm-6 jumbotron bg-transparent" style="min-width:50%;">
+            @* Login form *@
+            <div class="form-row">
+                <input id="txtEmail" asp-for="@Model.Email" class="mt-2 form-control col-12 @ViewData["WrongEmail"]" type="text" placeholder="Email" onkeyup="ContainsValidEmail(id)" />
+                <label id="lbltxtEmail" class="invalid-feedback">Wrong email address</label>
+                <input id="txtPassword" asp-for="@Model.Password" class="mt-2 form-control col12 @ViewData["WrongPass"]" type="password" placeholder="Password" />
+                <label id="lbltxtPassword" class="invalid-feedback">Wrong Password</label>
+            </div>
+            @* Login and Create New Account button *@
+            <div class="form-row">
+                <button class="mt-2 form-control-lg col btn btn-secondary" asp-page-handler="LoginCheck"><font size="4">Login</font></button>
+                <a class="col-sm-12" style="text-decoration: line-through;" href="#"><small>Forgot Password?</small></a>
+            </div>
+
+            @* Login input error message *@
+            <div class="row">
+                @if (ViewData["SuccessCustomerReg"] != null)
+                {
+                    <div class="alert-success col-12">@ViewData["SuccessCustomerReg"]</div>
+                }
+                @if (ViewData["FailedCustomerReg"] != null)
+                {
+                    <div class="alert-danger col-12">@ViewData["FailedCustomerReg"]</div>
+                }
+                <input class="form-control @ViewData["GeneralError"]" hidden />
+                <label class="invalid-feedback">@Model.ErrorMsg</label>
+                <input type="hidden" asp-for="@Model.ErrorMsg" value="@Model.ErrorMsg" />
+            </div>
+        </div>
+    </div>
+</form>

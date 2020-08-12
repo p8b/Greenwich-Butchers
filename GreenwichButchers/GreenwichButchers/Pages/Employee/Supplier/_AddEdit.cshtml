@@ -1,0 +1,113 @@
+﻿@model GreenwichButchers.Pages.Employee.SupplierRCModel
+<form method="post" class="row">
+    <div class="col-6">
+        @* Supplier Id *@
+        <input type="hidden" asp-for="_Supplier.SupplierID" value="@Model._Supplier?.SupplierID" />
+        @* Company *@
+        <div class="form-row mr-2">
+            <div class="col-form-label font-weight-bold"><small>Supplier Company</small></div>
+            <input id="txtSCompany" onkeyup="FieldRequiredCheck(this.id)" class="form-control" type="text" asp-for="@Model._Supplier.Company" value="@Model._Supplier?.Company" />
+            <label id="lbltxtSCompany" class="invalid-feedback"></label>
+        </div>
+        @* Full Name *@
+        <div class="form-row mr-2">
+            <div class="col-form-label font-weight-bold"><small>Contact Full Name</small></div>
+            <input id="txtSFullName" onkeyup="AlphabeticCheck(this.id,true)" class="form-control" type="text" asp-for="@Model._Supplier.FullName" value="@Model._Supplier?.FullName" />
+            <label id="lbltxtSFullName" class="invalid-feedback"></label>
+        </div>
+        @* Tel *@
+        <div class="form-row mr-2">
+            <div class="col-form-label font-weight-bold"><small>Tel</small></div>
+            <input id="txtSTel" onkeyup="TelChecker(this.id,true)" class="form-control" type="text" asp-for="@Model._Supplier.Tel" value="@Model._Supplier?.Tel"/>
+            <label id="lbltxtSTel" class="invalid-feedback"></label>
+        </div>
+        @* Email *@
+        <div class="form-row mr-2">
+            <div class="col-form-label font-weight-bold"><small>Email</small></div>
+            <input id="txtSEmail" onkeyup="ContainsValidEmail(this.id,false)" class="form-control" type="text" asp-for="@Model._Supplier.Email" value="@Model._Supplier?.Email" />
+            <label id="lbltxtSEmail" class="invalid-feedback"></label>
+        </div>
+        @* Description *@
+        <div class="form-row mr-2">
+            <div class="col-form-label font-weight-bold"><small>Description</small></div>
+            <textarea id="txtSDescription" class="form-control" asp-for="@Model._Supplier.Description" value="@Model._Supplier?.Description"></textarea>
+            <label id="lbltxtSDescription" class="invalid-feedback"></label>
+        </div>
+        @if (ViewData["View"] != null)
+        {
+        <div class="form-row mt-2">
+            @* Delete Button *@
+            <div class="col-6"><button class="col-sm-12 btn btn-danger" type="button" data-toggle="modal" data-target=".modal_Supplier">Delete</button></div>
+            @* Delete Confirmation Model *@
+            <div class="modal fade modal_Supplier" tabindex="-1" role="dialog" aria-hidden="true">
+                <div class="modal-dialog modal-body">
+                    <div class="modal-content row bg-light">
+                        <h4 class="col-12 mt-2 border-bottom">Confirmation</h4>
+                        <p class="col-12 mt-1">
+                            Are you sure you would like to delete current Supplier?
+                            This action will delete the Supplier and all it's related records.<br /><br />
+                            Related records includes:<br />
+                            Products category tags <br />
+                            Order Quotes<br />
+                        </p>
+                    </div>
+                    <div class="modal-content row bg-transparent">
+                        @* Final Delete Button *@
+                        <button class="col-12 btn btn-danger" data-toggle="modal" data-target=".modal_Supplier" asp-page-handler="Delete">
+                            Delete
+                        </button>
+                        @* Cancel delete button *@
+                        <button class="col-12 btn btn-success" type="button" data-toggle="modal" data-target=".modal_Supplier">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
+            @* Edit Button *@
+            <div class="col-6"><button class="col-12 btn btn-success" onclick="return CheckSupplierInfo()" asp-page-handler="Edit">Edit</button></div>
+        </div>
+        }
+        else
+        {
+            @* Add Button *@
+            <div class="form-row mr-2">
+                <button class="col-12 mt-2 btn btn-success" onclick="return CheckSupplierInfo()" asp-page-handler="Add">Add</button>
+            </div>
+        }
+    </div>
+
+    @if (Model._CategoryList != null)
+    {
+        @* Link Product categories to the supplier*@
+        <div class="col-6">
+            @* Product Categories *@
+            <div class="form-row mr-2">
+                <div class="col-8">
+                    <div class="col-form-label font-weight-bold"><small>Product Categories</small></div>
+                    <select class="form-control" name="CategoryName">
+                        @foreach (var item in Model._CategoryList)
+                        {
+                            <option>@item.CategoryName</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-4 mt-auto"><button class="btn btn-secondary col-12" asp-page-handler="AddTagCategory">Add</button></div>
+            </div>
+            @* Supply Categories tags *@
+            <div class="form-row mr-2">
+                <div class="col-form-label col-12 font-weight-bold"><small>Supplier's Category tags </small></div>
+                @if (Model._Supplier.CategoryList != null)
+                {
+                        <div class="form-row">
+                    @foreach (var item in Model._Supplier.CategoryList)
+                    {
+                                <div class="alert-info mr-1 pl-2">@item.CategoryName 
+                                    <button class="btn btn-danger pl-2 pr-2" asp-route-Category_Name="@item.CategoryName" asp-page-handler="DeleteTagCategory">X</button>
+                                </div>  
+                    }
+                        </div>
+                }
+            </div>
+        </div>
+    }
+</form>

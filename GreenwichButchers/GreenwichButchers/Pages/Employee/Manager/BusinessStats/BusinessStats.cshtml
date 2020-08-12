@@ -1,0 +1,71 @@
+﻿@page "/BusinessStats/"
+@model GreenwichButchers.Pages.Employee.BusinessStatsRCModel
+@using GreenwichButchers.SystemClasses
+@{
+    ViewData["Title"] = "Business Stats";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+
+    #region Page Login Check
+    // Check the login status of the user by passing the "Cookie"
+    // To the Constructor of "LoginCheck" class.
+    var _LoginCheck = new LoginCheck(Request.Cookies["Cookie"] ?? "", true);
+
+    // If User Login status is true (Successful)
+    if (CUser.LoginStatus)
+    {
+        // Check User's Role
+        switch (CUser.UserRole)
+        {
+            // The Current view is only accessible if the user has "Manager" role
+            case "Manager":
+                break;
+            case "Staff":
+            // If the user is customer
+            case "Customer":
+                // Redirect the user to index page
+                Response.Redirect("/Index", false);
+                break;
+        }
+        // Overwrite the Cookie with new hash value
+        Response.Cookies.Append("Cookie", _LoginCheck.cookieEncryptM.HashCookieID);
+    }
+    else // Else Login status is false (Failed)
+    {
+        // Redirect the user to login page
+        Response.Redirect("/Login", false);
+        // Delete the Cookie incase it exists
+        Response.Cookies.Delete("Cookie", new Microsoft.AspNetCore.Http.CookieOptions { Expires = DateTime.Now });
+        return;
+    }
+    #endregion
+
+}
+@* Header *@
+<div class="breadcrumb-item  border-bottom pb-0 border-success">
+    <a class="text-black-50">
+        <h3>Business Stats</h3>
+    </a>
+</div>
+<div class="row">
+    <div class="col-6">
+        <div class="col-12">
+            <font class="h6">Total Profit:</font> £@Model?.TotalProfit
+        </div>
+        <div class="col-12">
+            <font class="h6">Total Supplier's Payment:</font> £@Model?.TotalSupplierPayment
+        </div>
+        <div class="col-12">
+            <font class="h6">Total Sales:</font> £@Model?.TotalSale
+        </div>
+    </div>
+    <div class="col-6">
+        <h3>Mailing List</h3>
+        <textarea disabled class="form-control" rows="10">
+        @foreach (var item in Model?.MailingList)
+        {
+            @item;
+            @Html.Raw("\n")
+        }   
+        </textarea>
+    </div>
+</div>

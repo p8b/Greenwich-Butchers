@@ -1,0 +1,677 @@
+﻿@page "/Order/{Panel?}/{IDValue?}"
+@using GreenwichButchers.Models
+@using GreenwichButchers.SystemClasses
+@model GreenwichButchers.Pages.Shared.OrderRCModel
+@{
+    ViewData["Title"] = "My Orders";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+
+    #region Page Login Check
+    // Check the login status of the user by passing the "Cookie"
+    // To the Constructor of "LoginCheck" class.
+    var _LoginCheck = new LoginCheck(Request.Cookies["Cookie"] ?? "", true);
+
+    // If User Login status is true (Successful)
+    if (CUser.LoginStatus
+        && (CUser.UserRole == "Manager"
+            || CUser.UserRole == "Staff"
+            || CUser.UserRole == "Customer"))
+    {
+        // Overwrite the Cookie with new hash value
+        Response.Cookies.Append("Cookie", _LoginCheck.cookieEncryptM.HashCookieID);
+    }
+    #endregion
+
+    // Set the attributes of basket icon in the menu
+    if (ViewData["TotalItems"] != null)
+    {
+        // Set the visibility to null
+        ViewData["CustomerBasketVisibility"] = "";
+        ViewData["BasketCount"] = ViewData["TotalItems"];
+    }
+    else if (Request.Cookies["Basket"] != null)
+    {
+        var SecureCookie = new CookieEncryptM();
+
+        if (!SecureCookie.Read(Request.Cookies["Basket"]))
+        {
+            Response.Cookies.Delete("Basket", new Microsoft.AspNetCore.Http.CookieOptions { Expires = DateTime.Now });
+        }
+
+        // extract the order object from the cookie
+        var order = (Models.OrderM)(new ObjectConvert().String64ToObject(SecureCookie.Base64Value ?? ""));
+        // Set the visibility to null
+        ViewData["CustomerBasketVisibility"] = "";
+        ViewData["BasketCount"] = order?.ItemList?.Count.ToString() ?? "0";
+    }
+    else
+    {
+        ViewData["CustomerBasketVisibility"] = "hidden";
+    }
+
+    ViewData["ViewOrderDetails"] = "active show";
+    if (ViewData["ViewOrderQuote"] != null)
+    {
+        ViewData["ViewOrderDetails"] = "";
+    }
+}
+@* import Page specific JavaScript *@
+@section Scripts{
+    <script type="text/javascript" src="~/js/OrderJS.js"></script>
+}
+
+@* Header *@
+<div class="breadcrumb-item row border-bottom pb-0 border-success">
+    <a class="text-black-50">
+        <h3>@ViewData["OrderPageTitle"]</h3>
+    </a>
+    @if ((CUser.UserRole == "Staff" || CUser.UserRole == "Manager") && Request.Cookies["Basket"] != null)
+    {
+
+        <a class="nav-link font-weight-bold badge text-nowrap ml-auto" href="/Order/Checkout">
+            <font>Order Details</font>
+            <img src="~/Images/ShoppingCart.png" style="height:20px; width:20px;" />
+            <font class="mt-sm-1" size="3"><span class="badge badge-dark"> @ViewData["BasketCount"]</span></font>
+        </a>
+    }
+</div>
+
+@if (Model._Order?.OrderID > 0 && (bool?)ViewData["ViewOrder"] != false)
+{
+    if (Model?._Order?.Type == "Shop") { ViewData["disabled"] = "disabled"; }
+    if (Request.Cookies["Basket"] != null) { ViewData["disabledBack"] = "disabled"; }
+    @* Navigation Buttons*@
+    <nav class="nav nav-pills mb-3 flex-column flex-sm-row text-center border-bottom">
+        @* Employee  Navigation Button *@
+        <a href="/Order/Back" class="nav-link btn btn-light flex-sm-fill @ViewData["disabledBack"]">Back</a>
+        <a class="nav-link btn btn-light flex-sm-fill @ViewData["ViewOrderDetails"]" data-toggle="tab" href="#OrderDetails" role="tab" aria-controls="OrderDetails" aria-selected="true">Order Details</a>
+        <a class="nav-link btn btn-light flex-sm-fill @ViewData["disabled"] @ViewData["ViewOrderQuote"] " data-toggle="tab" href="#OrderQuotes" role="tab" aria-controls="OrderQuotes" aria-selected="false">Order Quotes</a>
+    </nav>
+}
+
+<div class="container">
+    <form method="post">
+        @if ((CUser.UserRole == "Staff" || CUser.UserRole == "Manager") && (bool?)ViewData["ViewOrder"] != true)
+        {
+            @* Search Box *@
+            <partial name="~/Pages/Employee/Order/_Search.cshtml" />
+        }
+        @if ((bool?)ViewData["ViewOrder"] == false)
+        {
+            @* Search result *@
+            <partial name="~/Pages/Shared/Order/_SearchResult.cshtml" />
+        }
+    </form>
+    @* View Order detail (One Order)Panel *@
+    @if ((bool?)ViewData["ViewOrder"] == true)
+    {
+        <form method="post">
+            <div class="tab-content">
+                <div class="tab-pane @ViewData["ViewOrderDetails"]" id="OrderDetails" role="tabpanel" aria-labelledby="OrderDetails-tab">
+                    <div class="row">
+                        @* Order Items *@
+                        <div class="col-sm-6 text-center">
+                            @* Table headers *@
+                            <div class="row">
+                                <div class="col-4  card-header font-weight-bold">Product</div>
+                                <div id="PriceHeader" class="col-4  card-header font-weight-bold">Price</div>
+                                <div class="col-4  card-header font-weight-bold">Quantity</div>
+                            </div>
+                            @* Order's Product List and quantity *@
+                            <input type="hidden" id="ProductCount" value="@Model._Order?.ItemList?.Count" />
+                            @* If Order's Product List is Not null *@
+                            @if (Model?._Order?.ItemList != null)
+                            {
+                                // Hidden Order Type
+                                <input type="hidden" id="OrderType" asp-for="_Order.Type" value="@Model._Order?.Type" />
+                                @*Go through the Order's product list and add a row for each product*@
+                                @for (var b = 0; b < Model._Order?.ItemList?.Count; b++)
+                                {
+                                    <div class="row">
+                                        @* Product Name *@
+                                        <div class="col mt-2">
+                                            <label asp-for="@Model._Order.ItemList[b].ProductName">
+                                                @Model._Order.ItemList[b].ProductName
+                                            </label>
+                                            @* Hidden elements to hold the product Category and name*@
+                                            <input hidden asp-for="@Model._Order.ItemList[b].ItemID" value="@Model._Order.ItemList[b].ItemID" />
+                                            <input hidden asp-for="@Model._Order.ItemList[b].ProductName" value="@Model._Order.ItemList[b].ProductName" />
+                                            <input hidden asp-for="@Model._Order.ItemList[b].CategoryName" value="@Model._Order.ItemList[b].CategoryName" />
+                                        </div>
+
+                                        @* Product price and Unit *@
+                                        <div class="col mt-2">
+                                            @if (Model?._Order?.Type == "Shop" || Model?._Order?.Status == "Complete")
+                                            {
+                                                <font id="PriceLabel_@b">£@Model._Order.ItemList[b].ItemPrice Per</font> @Model._Order.ItemList[b].RetailUnit
+                                                <input id="txtItemPrice_@b" type="hidden" asp-for="@Model._Order.ItemList[b].ItemPrice" value="@Model._Order.ItemList[b].ItemPrice" />
+                                                <input type="hidden" asp-for="@Model._Order.ItemList[b].RetailUnit" value="@Model._Order.ItemList[b].RetailUnit" />
+                                                <input id="txtRetailPrice_@b" type="hidden" asp-for="@Model._Order.ItemList[b].RetailPrice" value="@Model._Order.ItemList[b].RetailPrice" />
+                                            }
+                                            else
+                                            {
+                                                <font id="PriceLabel_@b">£@Model._Order.ItemList[b].RetailPrice Per</font> @Model._Order.ItemList[b].RetailUnit
+                                                <input id="txtItemPrice_@b" type="hidden" asp-for="@Model._Order.ItemList[b].RetailPrice" value="@Model._Order.ItemList[b].RetailPrice" />
+                                                <input hidden asp-for="@Model._Order.ItemList[b].RetailUnit" value="@Model._Order.ItemList[b].RetailUnit" />
+                                            }
+                                        </div>
+
+                                        @* Item quantity input *@
+                                        <div class="col mt-2">
+                                            @if ((((CUser.UserRole == "Customer" && ((Model?._Order?._Payment?.TotalProfit == null || Model?._Order?._Payment?.TotalProfit < 1)))
+                                                    || CUser.UserRole == "Staff" || CUser.UserRole == "Manager") 
+                                                    && Model?._Order?.Status != "Complete" && Model?._Order?.Status != "Cancelled") || Model?._Order?.OrderID == 0)
+                                            {
+                                                <div class="row">
+                                                    <input id="txtQuantity_@b" type="text" onkeyup="CheckDecimal2(this.id,9999.99)" class="form-control text-center is-valid" asp-for="_Order.ItemList[b].ItemQuantity" />
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <input id="txtQuantity_@b" type="hidden" onkeyup="CheckDecimal2(this.id,9999.99)" class="form-control text-center is-valid" asp-for="_Order.ItemList[b].ItemQuantity" />
+                                                <font id="txtQuantity_@b" class="text-center">@Model._Order.ItemList[b].ItemQuantity</font>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            }
+
+                            @* Buttons *@
+                            <div class="form-row mt-1">
+                                @if ((((CUser.UserRole == "Customer" && ((Model?._Order?._Payment?.TotalProfit == null || Model?._Order?._Payment?.TotalProfit < 1)))
+                                        || CUser.UserRole == "Staff" || CUser.UserRole == "Manager") 
+                                        && Model?._Order?.Status != "Complete" && Model?._Order?.Status != "Cancelled") || Model?._Order?.OrderID == 0)
+                                {
+                                    <a class="btn btn-secondary mt-1 col" href="/Shop/Update/@Model?._Order?.OrderID">Add New Item</a>
+                                }
+                                @if (Request.Cookies["Basket"] != null && Model._Order?.Status != "Complete"
+                                && Model._Order?.Status != "Cancelled")
+                                {
+                                    @if (Model._Order?.OrderID == 0)
+                                    {
+                                        <button class="btn btn-success mt-1 col" asp-page-handler="UpdateBasket">Update Basket</button>
+                                    }
+                                    <button class="btn btn-danger mt-1 col" asp-page-handler="DeleteBasket">
+                                        @if (Model?._Order?.OrderID > 0)
+                                        {
+                                            <font>Cancel Edit</font>
+                                        }
+                                        else
+                                        {
+                                            <font>Delete Basket</font>
+                                        }
+                                    </button>
+                                }
+                            </div>
+                        </div>
+
+                        @* Order Details *@
+                        <div class="col-sm-6">
+                            @* Customer Details *@
+                            <div class="form-row mt-1 ">
+                                @if (Model._Order != null && Model._Order._Customer != null)
+                                {
+                                    <input type="hidden" asp-for="_Order._Customer.CustomerID" value="@Model._Order._Customer.CustomerID" />
+                                    @* java script is used to set this value to the selected address if from the drop down menu*@
+                                    <input hidden="hidden" name="SelectedAddID" id="SelectAddIdTo" />
+
+                                    @* Display Customer's Title, Name and Surname*@
+                                    <div class="col-12 pt-1">
+                                        <font class="font-weight-bold">Customer Name:</font>
+                                        @Model._Order._Customer.Title
+                                        @Model._Order._Customer.Name
+                                        @Model._Order._Customer.Surname
+                                        @if ((((CUser.UserRole == "Customer" && ((Model?._Order?._Payment?.TotalProfit == null || Model?._Order?._Payment?.TotalProfit < 1)))
+                                                   || CUser.UserRole == "Staff" || CUser.UserRole == "Manager")
+                                                   && Model?._Order?.Status != "Complete" && Model?._Order?.Status != "Cancelled") || Model?._Order?.OrderID == 0)
+                                        {
+                                            <a class="btn-sm btn-dark float-right " href="/Customer/Account/Edit/@Model?._Order?._Customer?.CustomerID">Edit Customer</a>
+                                        }
+                                    </div>
+
+                                    @* Display Customer's Company*@
+                                    <div class="col-12 ">
+                                        <font class="font-weight-bold">Company:</font>
+                                        @Model._Order._Customer.Company
+                                    </div>
+
+                                    @* Display Customer's Email*@
+                                    <div class="col-12">
+                                        <font class="font-weight-bold">Email:</font>
+                                        @Model._Order._Customer.Email
+                                    </div>
+
+                                    @* Display Customer's Tel*@
+                                    <div class="col-12">
+                                        <font class="font-weight-bold">Tel:</font>
+                                        @Model._Order._Customer.Tel
+                                    </div>
+                                }
+
+
+                            </div>
+
+                            @*Order Details *@
+                            <div class="form-row mt-3 ">
+                                @* Order Type *@
+                                <div class="col-12">
+                                    <font class="font-weight-bold">Order Type: </font>
+                                    @if (Model._Order?.OrderID > 0 && CUser.UserRole == "Customer"
+                                      && Model?._Order?.Status != "Complete" && Model?._Order?.Status != "Cancelled")
+                                    {
+                                        switch (Model?._Order?.Type)
+                                        {
+                                            case "Shop":
+                                                @* Shop order button *@
+                                                <a id="ShopOrder" onclick="OrderSelector(this.id)" class='btn-light text-center active text-white btn-sm'>
+                                                    Shop Order (Retail Price)
+                                                </a>
+                                                break;
+                                            case "Bulk":
+                                                @* Place bulk order button *@
+                                                <a id="BulkOrder" onclick="OrderSelector(this.id)" class='btn-light text-center active text-white btn-sm'>
+                                                    Bulk Order (Quote Price)
+                                                </a>
+                                                break;
+                                        }
+                                    }
+                                    else if (Model?._Order?.Status != "Complete" && Model?._Order?.Status != "Cancelled" 
+                                        && (CUser.UserRole == "Staff" || CUser.UserRole == "Manager" || (Model._Order?.OrderID == 0 && CUser.UserRole == "Customer")))
+                                    {
+                                        @* Place bulk order button *@
+                                        <a id="BulkOrder" onclick="OrderSelector(this.id)" class='btn-light text-center active text-white btn-sm'>
+                                            Bulk Order (Quote Price)
+                                        </a>
+                                        @* Shop order button *@
+                                        <a id="ShopOrder" onclick="OrderSelector(this.id)" class='btn-light text-center active text-white btn-sm'>
+                                            Shop Order (Retail Price)
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <font>@Model?._Order?.Type</font>
+                                    }
+                                </div>
+
+                                @* Order ID *@
+                                <div class="col-12">
+                                    <font class="font-weight-bold">Order ID:</font>
+                                    @if (Model._Order?.OrderID > 0)
+                                    {
+                                        <font>@Model._Order?.OrderID</font>
+                                        <input type="hidden" asp-for="_Order.OrderID" value="@Model._Order.OrderID" />
+                                    }
+                                    else
+                                    {
+                                        <font>#</font>
+                                    }
+                                </div>
+
+                                @* Order Date *@
+                                <div class="col-12">
+                                    <font class="font-weight-bold">Date:</font>
+                                    @if (Model._Order?.Date != null)
+                                    {
+                                        <font>@Model._Order?.Date</font>
+                                    }
+                                    else
+                                    {
+                                        string CurrentDate = DateTime.Now.Date.ToShortDateString();
+                                        <font>@CurrentDate</font>
+                                    }
+                                </div>
+
+                                @* Order Status *@
+                                <div class="col-12">
+                                    <input id="OrderStatus" type="hidden" value="@Model._Order?.Status" />
+                                    <font class="font-weight-bold">Status:</font>
+                                    @if (Model._Order?.Status != null)
+                                    {
+                                        @if (Model._Order?.Status != "Pending")
+                                        {
+                                            switch (CUser.UserRole)
+                                            {
+                                                case "Customer":
+                                                    <font>@Model._Order?.Status</font>
+                                                    break;
+                                                case "Staff":
+                                                case "Manager":
+                                                    <select class="form-control-sm" asp-for="_Order.Status" value="@Model._Order?.Status">
+                                                        <option>Pending</option>
+                                                        <option>Complete</option>
+                                                        <option>Cancelled</option>
+                                                    </select>
+                                                    break;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <input type="hidden" asp-for="@Model._Order.Status" value="@Model._Order?.Status" />
+                                            <font>@Model._Order?.Status</font>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <font>New</font>
+                                    }
+                                </div>
+                                <div class="col-12">
+                                    @if (Model?._Order?.EmployeeList != null)
+                                    {
+                                        <font class="font-weight-bold">Employees Involved:</font>
+                                        <select class="form-control-sm">
+                                            @foreach (var item in Model?._Order?.EmployeeList)
+                                            {
+                                                @if (item.InitialEmp == true)
+                                                {
+                                                    <option value="@item.PersonID">@item.Title @item.Name @item.Surname (Initial Employee)</option>
+                                                }
+                                                else
+                                                {
+                                                    <option value="@item.PersonID">@item.Title @item.Name @item.Surname</option>
+                                                }
+                                            }
+                                        </select>
+                                    }
+                                </div>
+
+                                @* Order Total Price *@
+                                <div class="col-12 mt-3">
+                                    <font class="font-weight-bold">Total Price:</font>
+                                    @if (Model._Order?._Payment?.TotalPrice > 0)
+                                    {
+                                        <font>£@Model._Order?._Payment?.TotalPrice</font>
+                                        if (Model?._Order?._Payment?.TotalProfit > 0)
+                                        {
+                                            <font class="badge badge-success">Paid</font>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <font id="txtOrderTotalPrice">£0.00 </font>
+                                    }
+                                </div>
+                                @if (Model._Order?._Payment != null && (CUser.UserRole == "Staff" || CUser.UserRole == "Manager"))
+                                {
+                                    @* Order Payment Date *@
+                                    <div class="col-12">
+                                        <font class="font-weight-bold">Payment Date:</font>
+                                        <font>@Model._Order?._Payment?.PaymentDate</font>
+                                    </div>
+                                    @* Order Profit Margin *@
+                                    <div class="col-12">
+                                        <font class="font-weight-bold">Profit Margin:</font>
+                                        <select class="form-control-sm" asp-for="_Order._Payment.ProfitMargin" value="@Model._Order?._Payment?.ProfitMargin" style="overflow-y:scroll;">
+                                            @for (var i = 5; i <= 100; i++)
+                                            {
+                                                <option>@i</option>
+                                                i += 4;
+                                            }
+                                        </select>%
+                                    </div>
+                                    @* Order Supplier Total Payment *@
+                                    <div class="col-12">
+                                        <font class="font-weight-bold">Supplier's Payment:</font>
+                                        <font>£@Model._Order?._Payment?.SupplierTotalPayment</font>
+                                    </div>
+                                    @* Order Total Profit *@
+                                    <div class="col-12">
+                                        <font class="font-weight-bold">Total Profit:</font>
+                                        <font>£@Model._Order?._Payment?.TotalProfit</font>
+                                    </div>
+                                }
+                            </div>
+
+                            @if (Model._Order?._Customer != null)
+                            {
+                                @* Delivery Details *@
+                                @* Order's Note and Delivery date *@
+                                @* Update and Delete Order *@
+                                <div class="form-row mt-3 ">
+                                    <div class="col-12">
+                                        @if ((((CUser.UserRole == "Customer" && ((Model?._Order?._Payment?.TotalProfit == null || Model?._Order?._Payment?.TotalProfit < 1 || Model?._Address?.FirstLine == null)))
+                                                   || CUser.UserRole == "Staff" || CUser.UserRole == "Manager")
+                                                   && Model?._Order?.Status != "Complete" && Model?._Order?.Status != "Cancelled") || Model?._Order?.OrderID == 0)
+                                        {
+                                            @* Address Selector and Edit button *@
+                                            <div class="row">
+                                                <a class="btn-sm btn-secondary text-white ml-2 dropdown-toggle" id="AddressList" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                                    Select Delivery Address
+                                                </a>
+                                                <div class="dropdown-menu dropdown-menu-right" aria-labelledby="AddressList">
+                                                    @if (Model._Order?._Customer?.AddressList != null)
+                                                    {
+                                                        @*Loop through the customer addresses*@
+                                                        @for (var i = 0; i < Model._Order._Customer.AddressList.Count; i++)
+                                                        {
+                                                            <input type="hidden" />
+                                                            @* Add each address as an item in the drop-down menu*@
+                                                            <button id="btn_@i" class="dropdown-item border-bottom" value="@Model._Order._Customer.AddressList[i].AddressID" onclick="return CopyElementValue(this.id, 'SelectAddIdTo')" asp-page-handler="SelectThisAdd">
+                                                                <small>@Model._Order._Customer.AddressList[i].AddressName</small><br />
+                                                                <small>@Model._Order._Customer.AddressList[i].FirstLine</small><br />
+                                                                @* If second line is empty skip it *@
+                                                                @if (@Model._Order._Customer.AddressList[i].SecondLine != "")
+                                                                {
+                                                                    <small>@Model._Order._Customer.AddressList[i].SecondLine</small><br />
+                                                                }
+                                                                <small>@Model._Order._Customer.AddressList[i].City</small>
+                                                                <small>@Model._Order._Customer.AddressList[i].PostCode</small>
+                                                            </button>
+                                                        }
+                                                    }
+                                                </div>
+                                            </div>
+                                        }
+                                        @* Selected address information*@
+                                        <div class="row">
+                                            @if (Model._Address != null || CUser.UserRole == "Staff" || CUser.UserRole == "Manager")
+                                            {
+                                                <font class="col-12 font-weight-bold">Delivery Address</font>
+                                                if (Model?._Address?.FirstLine == null)
+                                                {
+                                                    <font class="col-12 alert-warning font-weight-bold">Please Select Address For Delivery</font>
+                                                }
+                                                @* Delivery address  *@
+                                                <div class="col-12 col-form-label pb-0">
+                                                    @Model?._Address?.AddressName
+                                                    @* Edit address button *@
+
+                                                    @if (((CUser.UserRole == "Customer" && (Model?._Order?._Payment?.TotalProfit == null || Model?._Order?._Payment?.TotalProfit < 1))
+                                               || CUser.UserRole == "Staff" || CUser.UserRole == "Manager") && Model?._Order?.Status != "Complete" && Model?._Order?.Status != "Cancelled")
+                                                    {
+                                                        <a class="btn-sm float-right btn-dark" href="/Customer/Account/EditAddress/@Model._Order?._Customer?.CustomerID/@Model._Address?.AddressID">
+                                                            Edit Address
+                                                        </a>
+                                                    }
+                                                </div>
+                                                <div class="col-12 pb-0">@Model?._Address?.FirstLine</div>
+                                                @if (Model?._Address?.SecondLine != null && Model?._Address?.SecondLine != "")
+                                                {
+                                                    <div class="col-12 pb-0">@Model?._Address?.SecondLine</div>
+                                                }
+                                                <div class="col-12 pb-0">@Model?._Address?.City</div>
+                                                <div class="col-12 mb-3">@Model?._Address?.PostCode</div>
+
+                                                @* Order's Note and Delivery date *@
+                                                <div class="col-6">
+                                                    @* Delivery Date *@
+                                                    <label class="font-weight-bold">Delivery Date:</label>
+                                                    @if ((((CUser.UserRole == "Customer" && ((Model?._Order?._Payment?.TotalProfit == null || Model?._Order?._Payment?.TotalProfit < 1)))
+                                                   || CUser.UserRole == "Staff" || CUser.UserRole == "Manager")
+                                                   && Model?._Order?.Status != "Complete" && Model?._Order?.Status != "Cancelled") || Model?._Order?.OrderID == 0)
+                                                    {
+                                                        <input id="txtDeliveryDate" asp-for="@Model._Order.DeliveryDate" onchange="DateChecker(this.id)" type="Date" class="form-control" />
+                                                        <div id="lbltxtDeliveryDate" class="invalid-feedback "></div>
+                                                    }
+                                                    else
+                                                    {
+                                                        <input id="txtDeliveryDate" asp-for="@Model._Order.DeliveryDate" type="hidden" class="form-control" />
+                                                        <font>@Model?._Order?.DeliveryDate</font>
+                                                    }
+                                                    @* Order Note *@
+                                                    <label class="font-weight-bold">Order Note</label>
+                                                    @if ((((CUser.UserRole == "Customer" && ((Model?._Order?._Payment?.TotalProfit == null || Model?._Order?._Payment?.TotalProfit < 1)))
+                                                  || CUser.UserRole == "Staff" || CUser.UserRole == "Manager")
+                                                  && Model?._Order?.Status != "Complete" && Model?._Order?.Status != "Cancelled") || Model?._Order?.OrderID == 0)
+                                                    {
+                                                        <textarea class="form-control" asp-for="@Model._Order.Note" rows="3"></textarea>
+                                                    }
+                                                    else
+                                                    {
+                                                        <input class="form-control" type="hidden" asp-for="@Model._Order.Note" />
+                                                        <p>@Model._Order.Note</p>
+                                                    }
+                                                </div>
+
+                                                @* Update and Delete Order *@
+                                                <div class="col-6 mt-auto">
+
+                                                    @if (((CUser.UserRole == "Customer" && (Model?._Order?._Payment?.TotalProfit == null || Model?._Order?._Payment?.TotalProfit < 1))
+                                                        || CUser.UserRole == "Staff" || CUser.UserRole == "Manager")
+                                              && Model?._Order?.Type == "Shop" && Model?._Order?.Status == "Pending" && Request.Cookies["Basket"] == null)
+                                                    {
+                                                        @* Submit and Update Order button*@
+                                                        <button class="col-12 btn btn-success mt-lg-1" id="@CUser.UserRole" onclick="return !!SubmitShopOrder(this.id)" asp-page-handler="SubmitShopOrder">
+                                                            @switch (CUser.UserRole)
+                                                            {
+                                                                case "Staff":
+                                                                case "Manager":
+                                                                    <font>Pay/Complete Order</font>
+                                                                    break;
+                                                                default:
+                                                                    <font>Pay Order</font>
+                                                                    break;
+                                                            }
+                                                        </button>
+                                                        @* Chose Stock Location to supplier from *@
+                                                        if (CUser.UserRole == "Staff" || CUser.UserRole == "Manager")
+                                                        {
+                                                            <div class="modal fade active show" id="SelectShippingLocation" role="dialog" aria-labelledby="SelectShippingLocation" aria-hidden="true">
+                                                                <div class="modal-dialog modal-dialog-centered">
+                                                                    <div class="modal-content modal-body">
+                                                                        <h5 class="mt-2">Choose Shipping location</h5>
+                                                                        @* Stock Location Drop-down menu *@
+                                                                        <select id="ddStockLocation" class="form-control-lg col-sm-12" name="StockLocation">
+                                                                            @* Load existing stock locations *@
+                                                                            @if (Model?._StockLocationList != null)
+                                                                            {
+                                                                                @foreach (var item in Model?._StockLocationList)
+                                                                                {
+
+                                                                                    <option>@item.LocationName</option>
+                                                                                }
+                                                                            }
+                                                                        </select>
+                                                                        <button id="btnSubmitShopOrder" class="col-12 btn btn-success mt-1" asp-page-handler="SubmitShopOrder">Submit</button>
+                                                                        <button class="col-12 btn btn-danger mt-1" data-dismiss="modal">Cancel</button>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            @if ((bool?)ViewData["NoStock"] == true)
+                                                            {
+                                                                @* Show stock error *@
+                                                                <div id="FailedStockBG" class="modal fade show bg-danger modal-backdrop" style="height:100%; display: block;">
+                                                                </div>
+                                                                <a id="FailedStock" class="modal show" data-toggle="modal"  onclick="CloseModal(this.id)" data-target="#SelectShippingLocation" data-backdrop="true" style="display: block;">
+                                                                    <div class="modal-dialog  modal-dialog-centered modal-body">
+                                                                        <div class="modal-content modal-body bg-white border-0">
+                                                                            <h3 class="">Insufficient Stock level</h3>
+                                                                            @foreach(var err in Model?._ListError?.ErrorList)
+                                                                            {
+                                                                                <font class="text-red">@err.ItemErrorMsg</font>
+                                                                            }
+                                                                        </div>
+                                                                    </div>
+                                                                </a>
+                                                            }
+                                                        }
+                                                    }
+
+                                                    @if (((CUser.UserRole == "Customer" && Model?._Address?.FirstLine != null && Model?._Order?._Payment?.TotalProfit == 0
+                                                  && Model?._Order?.Status != "Complete" && Model?._Order?.Status != "Cancelled")
+                                                  || CUser.UserRole == "Staff" || CUser.UserRole == "Manager") || Model?._Order?.OrderID == 0)
+                                                    {
+                                                        @* Submit and Update Order button*@
+                                                        <button class="col-12 btn btn-success mt-1" id="@CUser.UserRole" onclick="return !!SubmitOrderCheck(this.id)" asp-page-handler="SubmitOrder">
+                                                            @if (Model?._Order?.OrderID > 0)
+                                                            {
+                                                                <font>Update Order</font>
+                                                            }
+                                                            else
+                                                            {
+                                                                <font>Submit order</font>
+                                                            }
+                                                        </button>
+                                                    }
+
+                                                    @* Delete Order Button*@
+                                                    @if (Model?._Order?.OrderID > 0 && (CUser.UserRole == "Staff" || CUser.UserRole == "Manager"))
+                                                    {
+                                                        @* Delete Product Button *@
+                                                        <a class="btn btn-danger col-4 col-12 mt-1 text-white" data-toggle="modal" data-target=".modalDeleteOrder">Delete Order</a>
+                                                        @* Delete Confirmation Model *@
+                                                        <div class="modal fade modalDeleteOrder" tabindex="-1" role="dialog" aria-hidden="true">
+                                                            <div class="modal-dialog modal-body">
+                                                                <div class="modal-content row bg-light">
+                                                                    <h4 class="col-12 mt-2 border-bottom">Confirmation</h4>
+                                                                    <p class="col-12 mt-1">
+                                                                        Are you sure you would like to permanently delete the current order?<br />
+                                                                        To keep the records cancel the order by changing the order status.
+                                                                    </p>
+                                                                </div>
+                                                                <div class="modal-content row bg-transparent">
+                                                                    <button class="col-12 btn btn-danger" data-toggle="modal" data-target=".modalDeleteOrder" asp-route-Orderid="@Model?._Order?.OrderID" asp-page-handler="DeleteOrder">
+                                                                        Delete Order
+                                                                    </button>
+                                                                    <button class="col-12 btn btn-success" type="button" data-toggle="modal" data-target=".modalDeleteOrder">
+                                                                        Cancel
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    }
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                            else if (CUser.UserRole != "Staff" && CUser.UserRole != "Manager")
+                            {
+                                // Else display login and register buttons
+                                <div class="form-row mt-3">
+                                    <a class="btn btn-secondary mt-3 float-md-none font-weight-bold " href="/Login/Basket">Login</a>
+                                    <a class="btn btn-secondary mt-3 float-md-none font-weight-bold ml-2 " href="/Customer/Register">Register</a>
+                                </div>
+                            }
+                            else if (CUser.UserRole == "Staff" || CUser.UserRole == "Manager")
+                            {
+                                <div class="form-row mt-3">
+                                    <a class="btn btn-secondary mt-3 float-md-none font-weight-bold " href="/Customers">Add Customer to Order</a>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-pane @ViewData["ViewOrderQuote"]" id="OrderQuotes" role="tabpanel" aria-labelledby="OrderQuotes-tab">
+                    @if (Model?._Order?.Type == "Bulk")
+                    {
+                        @* Display Order Items for Quotes *@
+                        @switch (CUser.UserRole)
+                        {
+                            case "Customer":
+                            case "Staff":
+                            case "Manager":
+                                Model._SuppliersList = await new SupplierM().GetSuppliersAsync("", "Off").ConfigureAwait(false);
+                                <partial name="~/Pages/Shared/Order/_OrderQuote.cshtml" />
+                                break;
+                        }
+                    }
+                </div>
+            </div>
+        </form>
+    }
+</div>
+
+<partial name="~/Pages/Shared/ErrorPop.cshtml" />

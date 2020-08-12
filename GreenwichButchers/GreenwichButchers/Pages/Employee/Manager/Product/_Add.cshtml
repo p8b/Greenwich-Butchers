@@ -1,0 +1,57 @@
+﻿@model GreenwichButchers.Pages.Employee.ProductRCModel
+<div class="tab-content">
+    <div class="tab-pane fade @ViewData["Add"]" id="AddProduct" role="tabpanel" aria-labelledby="AddProduct-tab">
+        <form method="post" class="row">
+            <h5 class="col-12 mb-2">Add Product</h5>
+            <div class="col-sm-12 pb-3">
+                @* Categories Drop-down menu *@
+                <div class="form-row mt-2">
+                    <div class="col-sm-6 ">
+                        <select id="ddCategoryP2" class="form-control mr-auto" onchange="FieldRequiredCheck(this.id)" asp-for="@Model._Product.CategoryName">
+                            <option selected disabled>Select Category</option>
+                            @if (Model != null && Model._CategoryList != null)
+                            {
+                                ViewData["selectedOption"] = "Selected";
+                                @foreach (var item in Model._CategoryList)
+                                {
+
+                                    <option>@item.CategoryName</option>
+                                }
+                            }
+                        </select>
+                        <label id="lblddCategoryP2" class="invalid-feedback"><small><span asp-validation-for="_Product.CategoryName" class="text-danger"></span></small></label>
+                    </div>
+                </div>
+                @* Product Name *@
+                <div class="form-row mr-2">
+                    <div class="col-form-label font-weight-bold" for="txtProductName"><small>Product Name</small></div>
+                    <input id="txtProductNameP2" onkeyup="FieldRequiredCheck(this.id)" class="form-control" type="text" asp-for="@Model._Product.ProductName" />
+                    <label id="lbltxtProductNameP2" class="invalid-feedback"><span asp-validation-for="_Product.ProductName" class="text-danger"></span></label>
+                </div>
+                @* Product Retail Price and Unit *@
+                <div class="form-row mr-2">
+                    <div class="col-6">
+                        <div class="col-form-label font-weight-bold" for="txtRetailPrice"><small>Product Retail Price</small></div>
+                        <input id="txtRetailPriceP2" onkeyup="CheckDecimal2(this.id,9999)" class="form-control" type="text" asp-for="@Model._Product.RetailPrice" />
+                        <label id="lbltxtRetailPriceP2" class="invalid-feedback"><small><span asp-validation-for="_Product.RetailPrice" class="text-danger"></span></small></label>
+                    </div>
+                    <div class="col-6">
+                        <div class="col-form-label font-weight-bold" for="txtRetailUnit"><small>Product Retail Unit</small></div>
+                        <input id="txtRetailUnitP2" onkeyup="FieldRequiredCheck(this.id)" class="form-control" type="text" asp-for="@Model._Product.RetailUnit" />
+                        <label id="lbltxtRetailUnitP2" class="invalid-feedback"><small><span asp-validation-for="_Product.RetailUnit" class="text-danger"></span></small></label>
+                    </div>
+                </div>
+                @* Add Product Button *@
+                <div class="form-row mt-3">
+                    <div class="col-sm-6 ml-auto">
+                        <button class="col-12 btn btn-success" onclick="return !!PTwoSubmitCheck()" asp-page-handler="AddProduct">Add</button>
+                        @if (ViewData["SuccessMsg"] != null)
+                        {
+                            <button name="NewProductName" onclick="return !!PTwoSubmitCheck()" value="@Model._Product.ProductName" class="col-12 btn btn-success mt-1" asp-page-handler="AddStockValues">Add Stock Value</button>
+                        }
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

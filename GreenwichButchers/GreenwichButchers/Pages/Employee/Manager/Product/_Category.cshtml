@@ -1,0 +1,136 @@
+﻿@model GreenwichButchers.Pages.Employee.ProductRCModel
+<div class="tab-content">
+    <div class="tab-pane fade @ViewData["Category"]" id="AddModifyCategory" role="tabpanel" aria-labelledby="AddModifyCategory-tab">
+        <div class="row">
+            @* Add Category *@
+            <div class="col-sm-6 border-left border-right pb-3">
+                <form method="post" enctype="multipart/form-data">
+                    <h5 class="mt-2 mb-2">Add Product Category</h5>
+                    @* Category Type *@
+                    <div class="form-row mt-2">
+                        <select id="txtTitle" class="form-control col-auto mr-auto" asp-for="_Category.CategoryTypes">
+                            <option>Meat</option>
+                            <option>Condiments</option>
+                        </select>
+                    </div>
+                    @* New Category Name *@
+                    <div class="form-row">
+                        <div class="col-form-label font-weight-bold" for="txtCategoryName"><small>Category Name</small></div>
+                        <input id="txtNewCategoryName" class="form-control" onchange="FieldRequiredCheck(this.id)" type="text" asp-for="_Category.CategoryName" />
+                        <label id="lblNewtxtCategoryName" class="invalid-feedback p-0"></label>
+                    </div>
+                    @* Category Image *@
+                    <div class="form-row  mt-2">
+                        <label class="col font-weight-bold"><small>Upload Product Category Image</small></label>
+                        <div class="custom-file">
+                            <input id="UploadPhoto1" type="file" accept="image/*" class="custom-file-input" name="ImgFile" onchange="UploadPhotoCheck(this.id)" />
+                            <div id="lblInUploadPhoto1" class="custom-file-label">Image used in "Shop" page</div>
+                            <div id="lblUploadPhoto1" class="invalid-feedback p-0"></div>
+                        </div>
+                    </div>
+                    @* Add Category Button and Confirmation results *@
+                    <div class="form-row mt-3">
+                        <div class="col-sm-6"><button class="col-12 btn btn-success mt-1" onclick="return !!PThreeSubmitCheck('Add')" asp-page-handler="AddCategory">Add</button></div>
+                    </div>
+                </form>
+            </div>
+            @* Modify Category *@
+            <div class="col-sm-6 border-left border-right pb-3">
+                <h5 class="mt-2">Modify Product Category</h5>
+                @* Categories Drop-down menu *@
+                <form method="post" class="form-row mt-2 border-bottom pb-2">
+                    <select id="ddCategory" class="form-control col-sm-8 mr-auto" asp-for="@Model._Category.CategoryName">
+                        <option selected disabled>Select a Category</option>
+                        @if (Model != null && Model._CategoryList != null)
+                        {
+                            ViewData["selectedOption"] = "Selected";
+                            @foreach (var item in Model._CategoryList)
+                            {
+
+                                <option>@item.CategoryName</option>
+
+                            }
+                        }
+                    </select>
+                    <button class="col-sm-4 btn btn-secondary" asp-page-handler="EnableCategoryModify">Modify</button>
+                </form>
+
+                @* if category name is selected *@
+                @if (ViewData["SelectedCategoryName"] != null)
+                {
+                    <form method="post" enctype="multipart/form-data" class="col-sm-12">
+
+                        @* Current Category Name and Image and their hidden path element *@
+
+                        <div class="form-row justify-content-center">
+                            <div class="col font-weight-bold">Preview (Shop Page)</div>
+                            <div class="col-4 justify-content-center" style="min-width:330px;">
+                                @* Preview New category image *@
+                                <div class="mt-2 text-white badge text-nowrap" style="min-width:330px;">
+                                    @* Preview Image *@
+                                    <img id="ImgPreview" src="@ViewData["SelectedCategoryImagePath"]" alt="Image Not Found" style="height:100%; width:100%;">
+
+                                    @* Category container *@
+                                    <div class="card-img-overlay" @ViewData["HideCategoryLabel"]>
+                                        @* Overlay preview new category name *@
+                                        <font id="TextImgPreview" class="bg-dark container-fluid" size="+10">@ViewData["SelectedCategoryName"]</font>
+                                    </div>
+                                </div>
+                                @* hidden Current Image path *@
+                                <input hidden="hidden" name="SelectedCategoryImagePath" value="@ViewData["SelectedCategoryImagePath"]" />
+                            </div>
+                        </div>
+                        @* New Category Name *@
+                        <div class="form-row">
+                            <input hidden="hidden" name="SelectedCategoryName" value="@ViewData["SelectedCategoryName"]" />
+                            <div class="col-form-label font-weight-bold" for="txtCategoryName"><small>New Category Name</small></div>
+                            <input id="txtCategoryName" class="form-control mt-auto" onkeyup="CategoryNamePreview(this.id,'TextImgPreview')" type="text" asp-for="_CategoryName" />
+                        </div>
+                        @* New Category Image *@
+                        <div class="form-row">
+                            <label class="col-form-label pt3"><small>Upload New Category Image</small></label>
+                            <div class="custom-file">
+                                <input id="UploadPhotoModify" type="file" accept="image/*" class="custom-file-input" name="ImgFileModify" onchange="CategoryImagePreview(this.id, event, 'ImgPreview')" />
+                                <div id="lblUploadPhotoModify" class="custom-file-label">Image used in "Shop" page</div>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            @* Update and Delete Category Button *@
+                            <div class="col-sm-6 mt-2">
+                                <button class="col-sm-12 btn btn-success mt-1" asp-page-handler="UpdateCategory">Update</button>
+                                <button class="col-sm-12 btn btn-danger mt-1" type="button" data-toggle="modal" data-target=".modal_Category">Delete</button>
+                                @* Delete Confirmation Model *@
+                                <div class="modal fade modal_Category" tabindex="-1" role="dialog" aria-hidden="true">
+                                    <div class="modal-dialog modal-body">
+                                        <div class="modal-content row bg-light">
+                                            <h4 class="col-12 mt-2 border-bottom">Confirmation</h4>
+                                            <p class="col-12 mt-1">
+                                                Are you sure you would like to delete @ViewData["SelectedCategoryName"]?
+                                                This action will delete the product Category and all it's related records.<br /><br />
+                                                Related records includes:<br />
+                                                Products Information <br />
+                                                Stock Information<br />
+                                                Order Items<br />
+                                                Quote Information
+                                            </p>
+                                        </div>
+                                        <div class="modal-content row bg-transparent">
+                                            @* Final Delete Button *@
+                                            <button class="col-12 btn btn-danger" data-toggle="modal" data-target=".modal_Category" asp-page-handler="DeleteCategory">
+                                                Delete
+                                            </button>
+                                            @* Cancel delete button *@
+                                            <button class="col-12 btn btn-success" type="button" data-toggle="modal" data-target=".modal_Category">
+                                                Cancel
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                }
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,218 @@
+﻿@*Parameter received from URL*@
+@page "/Shop/{ProductCategory?}/{ID?}"
+@*Imported name space*@
+@using GreenwichButchers.SystemClasses
+@using GreenwichButchers.Models
+
+@*Model class of current view*@
+@model GreenwichButchers.Pages.Public.ShopRCModel
+@*Razor function to add C# code to current page*@
+@{
+    //Setting the page title
+    ViewData["Title"] = "Categories";
+    // Reference to the layout partial page
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+
+
+    // Check the login status of the user by passing the "Cookie"
+    // To the Constructor of "LoginCheck" class. The second parameter will renew
+    // the cookie hash value
+    var _LoginCheck = new LoginCheck(Request.Cookies["Cookie"] ?? "", true);
+
+    // If User Login status is true (Successful)
+    if (CUser.LoginStatus)
+    {
+        // Overwrite the Cookie with new hash value
+        Response.Cookies.Append("Cookie", _LoginCheck.cookieEncryptM.HashCookieID);
+    }
+    else // Else Login status is false (Failed)
+    {
+        // Delete the Cookie incase it exists
+        Response.Cookies.Delete("Cookie", new Microsoft.AspNetCore.Http.CookieOptions { Expires = DateTime.Now });
+    }
+
+
+    //Request for Basket to display basket icon on the menu
+    ViewData["Basket"] = Request.Cookies["Basket"];
+
+
+    // if the category list holds MORE than one category
+    if (Model?.CategoryList?.Count != 1)
+    {
+        // Set the category list to be centered
+        ViewData["OneCat"] = "justify-content-center";
+        // Remove the underline from the "Categories" word
+        ViewData["LinkEnable"] = "style=text-decoration:none";
+        // Remove the category name from the title
+        ViewData["Category"] = "";
+
+    }
+    else // If only one category is present
+    {
+        // remove the center css and add padding
+        // to the left of category image
+        ViewData["OneCat"] = "pl-4";
+        ViewData["HideCategoryLabel"] = "hidden";
+        // Add the category name to the Title
+        ViewData["Category"] = Model.CategoryList[0].CategoryName;
+    }
+
+    // Set the attributes of basket icon in the menu
+    if (ViewData["NewHashCookieID"] != null
+        || Request.Cookies["Basket"] != null)
+    {
+        var SecureCookie = new CookieEncryptM();
+        if (ViewData["NewHashCookieID"] != null)
+        {
+            SecureCookie.Read(ViewData["NewHashCookieID"].ToString());
+        }
+        else
+        {
+            if (!SecureCookie.Read(Request.Cookies["Basket"]))
+            {
+                Response.Cookies.Delete("Basket", new Microsoft.AspNetCore.Http.CookieOptions { Expires = DateTime.Now });
+                Response.Redirect("index", false);
+                return;
+            }
+        }
+
+        // extract the order object from the cookie
+        var order = (OrderM)(new ObjectConvert().String64ToObject(SecureCookie.Base64Value));
+        // Set the visibility to null
+        ViewData["CustomerBasketVisibility"] = "";
+        ViewData["BasketCount"] = order?.ItemList?.Count.ToString() ?? "0";
+    }
+    else // Else Hide the "Basket on the navigation bar"
+    {
+        ViewData["CustomerBasketVisibility"] = "hidden";
+        ViewData["BasketCount"] = '0';
+
+    }
+}
+@* import Page specific JavaScript *@
+@section Scripts{
+    <script type="text/javascript" src="~/js/ShopJS.js"></script>
+}
+@* Header *@
+@*Page name. Also used as back link when a category is chosen*@
+    <div class="breadcrumb bg-transparent border-bottom pb-0 border-success">
+        <a class="text-black-50 breadcrumb-item" @ViewData["LinkEnable"] href="/Shop">
+            <h3>@ViewData["Title"]</h3>
+        </a>
+        @if (ViewData["Category"].ToString() != "")
+        {
+            <font class="breadcrumb-item active mt-auto mb-1" size="5">
+                @ViewData["Category"]
+            </font>
+        }
+        @if ((CUser.UserRole == "Staff" || CUser.UserRole ==  "Manager") && (Request.Cookies["Basket"] != null || ViewData["NewHashCookieID"] != null))
+        {
+
+            <a class="nav-link font-weight-bold badge text-nowrap ml-auto" href="/Order/Checkout">
+                <font class="text-secondary" size="2">Current Order Details</font>
+                <img src="~/Images/ShoppingCart.png" style="height:20px; width:20px;" />
+                <font class="mt-sm-1" size="3"><span class="badge badge-dark"> @ViewData["BasketCount"]</span></font>
+            </a>
+        }
+    </div>
+
+@*Loading category images*@
+<form method="post">
+    @* Use foreach loop to load all the categories or
+        one category when one of them is chosen.
+        The list is received from the current page model *@
+    <div class="form-row">
+        @* Loop through the category list*@
+        @foreach (var item in Model?.CategoryList)
+        {
+            @* Main Container of each category *@
+            <div class="col-sm-4" style="min-width:330px;">
+                @* Image and label Container *@
+                <a class="mt-2 text-white badge shadow-lg text-nowrap" href="~/Shop/@item.CategoryName" style="min-width:330px;">
+                    @* Image tag *@
+                    <img class="" src="@item.CategoryImagePath" alt="Image Not Found" style="height:100%; width:100%;">
+
+                    @* Category container *@
+                    <div class="card-img-overlay" @ViewData["HideCategoryLabel"]>
+                        @* Overlay category name *@
+                        <font class="bg-dark container-fluid" size="+10">@item.CategoryName</font>
+                    </div>
+                </a>
+                @if (Model.CategoryList.Count == 1)
+                {
+                    // Hidden Order Type
+                    <input type="hidden" id="OrderType" asp-for="_OrderType" value="@Model._OrderType" />
+                    @* Place bulk order button *@
+                    <a id="BulkOrder" onclick="OrderSelector(this.id)" class='btn-light active text-white btn mb-auto col-12 mt-3' style="min-width:330px;">
+                        Bulk Order (Quote Price)
+                    </a>
+                    @* Shop order button *@
+                    <a id="ShopOrder" onclick="OrderSelector(this.id)" class='btn-light active text-white btn mb-auto col-12 mt-3' style="min-width:330px;">
+                        Shop Order (Retail Price)
+                    </a>
+                }
+            </div>
+
+        }
+
+        @*Product List
+        This element is only shown when one category is chosen *@
+        @if (Model?.CategoryList?.Count == 1)
+        {
+
+            @* Product List within the basket*@
+            <div class="col-sm-8 p-2 text-center">
+                @* Table headers *@
+                <div class="row">
+                    <h3 class=" col-12 text-center">
+                        Product List
+                    </h3>
+                    <div class="col card-header font-weight-bold">Product</div>
+                    <div id="RetailPriceHeader" class="col card-header font-weight-bold">Retail Price</div>
+                    <div class="col card-header font-weight-bold">Quantity</div>
+                </div>
+
+                @* Product List and quantity inputs *@
+                <input type="hidden" id="ProductCount" value="@Model.ProductList?.Count" />
+                @* If Product List is Not null *@
+                @if (Model?.ProductList != null)
+                {
+                    // Go through the product list abd add a row for each
+                    @for (var i = 0; i < Model.ProductList.Count; i++)
+                    {
+                        <div class="row">
+                            @* Product Name *@
+                            <div class="col mt-2">
+                                <label asp-for="@Model.ProductList[i].ProductName">
+                                    @Model.ProductList[i].ProductName
+                                </label>
+                                @* Hidden elements to hold the product Category and name*@
+                                <input hidden asp-for="@Model.ProductList[i].ProductName" value="@Model.ProductList[i].ProductName" />
+                                <input hidden asp-for="@Model.ProductList[i].CategoryName" value="@Model.ProductList[i].CategoryName" />
+                            </div>
+                            @* Product retail price and Unit *@
+                            <div class="col mt-2">
+                                <font id="RetailPriceLabel_@i">£@Model.ProductList[i].RetailPrice Per</font> @Model.ProductList[i].RetailUnit
+                                <input hidden asp-for="@Model.ProductList[i].RetailPrice" value="@Model.ProductList[i].RetailPrice" />
+                                <input hidden asp-for="@Model.ProductList[i].RetailUnit" value="@Model.ProductList[i].RetailUnit" />
+                            </div>
+                            @* Item quantity input *@
+                            <div class="col mt-2">
+                                <div class="row">
+                                    <input id="txtQuantity_@i" type="text" onkeyup="CheckDecimal2(this.id,9999.99)" class="form-control is-valid text-center mr-1 " asp-for="@Model.ProductList[i].ItemQuantity" />
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+                @* Add To Basket Button *@
+                <div class="row">
+                    <div class="col-md-4 mt-2 ml-auto">
+                        <button asp-page-handler="AddToBasket" class="btn btn-success form-control row">Add To Basket</button>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>    
+
+</form>

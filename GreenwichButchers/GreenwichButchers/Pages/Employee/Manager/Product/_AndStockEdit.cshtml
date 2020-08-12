@@ -1,0 +1,288 @@
+﻿@model GreenwichButchers.Pages.Employee.ProductRCModel
+<div class="tab-content">
+    <div class="tab-pane fade @ViewData["AndStockEdit"]" id="ModifyProduct" role="tabpanel">
+        @* Search box and category drop-down menu *@
+        <form method="post" class="row">
+            <h5 class="col-12 mb-2">Modify Product/Stock</h5>
+            <div class="col-sm-12 pb-3">
+                <div class="form-row ">
+                    @* Search Box *@
+                    <div class="col-sm-6">
+                        <div class="col-form-label" for="txtSearchBox">Search Products</div>
+                        <input id="txtSeachBoxP1" class="form-control" onkeyup="DDAccess(this.id,'ddCategoryP1')" type="text" asp-for="@Model._SearchValue" placeholder="Search" />
+                    </div>
+                    @* Categories and Products Drop-down menus *@
+                    <div class="col-sm-4">
+                        <div class="col-form-label" for="ddCategory">Select Product Category</div>
+                        <select id="ddCategoryP1" class="form-control col-sm-12" asp-for="_CategoryName">
+                            <option>All</option>
+                            @* Load the category options *@
+                            @if (Model != null && Model._CategoryList != null)
+                            {
+                                @foreach (var item in Model._CategoryList)
+                                {
+
+                                    <option>@item.CategoryName</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                    <div class="col-sm-2 mt-auto">
+                        @* Search Button *@
+                        <button class="btn btn-secondary col text-white" asp-page-handler="SearchProduct">Search</button>
+                    </div>
+                </div>
+                @* This hidden method will keep the page number for the form of the search section *@
+                <input hidden="hidden" asp-for="_ShowItemPerPage" />
+            </div>
+        </form>
+        @* Search result *@
+        <form method="post" class="row">
+
+            <div class="col-sm-12 pb-3">
+                @* Check if product list has objects *@
+                @if (Model != null && Model._ProductList != null && Model._ProductList.Count != 0)
+                {
+                    // The default page number
+                    int PageNum = 1;
+                    // Used to  decide whether to show the record (true) or not (false)
+                    var ShowRecord = false;
+                    // Set the total number of pages
+                    var TotalPages = 1;
+
+                    // Check if total number of searched products is less than the amount set to be shown per page
+                    if (Model._ProductList.Count > Model._ShowItemPerPage)
+                    {
+                        // divide the total number of products by the amount set to be shown per page and round it up to the
+                        // nearest whole number
+                        TotalPages = Convert.ToInt32(Math.Ceiling((double)Model._ProductList.Count / Model._ShowItemPerPage));
+                    }
+                    @* Drop down menu to choose the amount of search items to show per page *@
+                    <div class="row">
+                        <nav class="col-sm-6">
+                            <ul class="pagination mb-0 pb-0">
+                                <li class="page-item disabled">
+                                    <div class="dropdown">
+                                        <button class="btn dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                            Show @Model._ShowItemPerPage Items Per Page
+                                        </button>
+                                        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                                            @* Starting from 4 add 4 each time until 20 (Included) *@
+                                            @for (var RecPerPageH = 5; RecPerPageH <= 30; RecPerPageH++)
+                                            {
+                                                <button class="dropdown-item" onclick="return Set_ShowPageNum(this.id)" id="@RecPerPageH" asp-page-handler="PageController">@RecPerPageH</button>
+                                                RecPerPageH += 4;
+
+                                            }
+                                        </div>
+                                        @* Hidden elements to hold the values for total page number and total shown items per page*@
+                                        <input id="ShowPageNumItem" type="hidden" asp-for="_ShowItemPerPage" value="@Model._ShowItemPerPage" />
+                                        <input id="TotalPages" type="hidden" value="@TotalPages" />
+                                    </div>
+                                </li>
+                            </ul>
+                        </nav>
+                        @* Shows the total number of search records fount*@
+                        <div class="mt-auto ml-auto mr-1"><font size="3" class="col">Records Found: @Model._ProductList.Count</font></div>
+                    </div>
+
+                    // Load all the products from the product list
+                    @for (var i = 0; i < Model._ProductList.Count; i++)
+                    {
+                        // Set the background of the odd search result item
+                        if ((i % 2) == 0)
+                        {
+                            ViewData["bgChange"] = "table-secondary";
+                        }
+                        else // else the background is white
+                        {
+                            ViewData["bgChange"] = "";
+                        }
+                        // if the current item falls within the Show item per page
+                        if ((i + 1) % Model._ShowItemPerPage != 0)
+                        {
+                            // find the page number of the item
+                            PageNum = ((i + 1) / Model._ShowItemPerPage) + 1;
+
+                            // if the item page number and the current selected page
+                            // number is equal
+                            if (PageNum != Model._ShowPageNum)
+                            {
+                                ViewData["ShowRecord"] = "hidden=hidden";
+                            }
+                            else
+                            {
+                                ViewData["ShowRecord"] = "";
+                            }
+                        }
+                        // Hidden element to pass the current page number to the server side
+                        <input hidden="hidden" name="currentPageNum" value="@PageNum" />
+                        <div id="PagePanel_@PageNum" @ViewData["ShowRecord"] class="border pl-3 pr-3 pb-3 @ViewData["bgChange"]">
+                            <div hidden="hidden" name="currentPageNum">@Model._ShowPageNum</div>
+                            @* Product Info *@
+                            <div class="row ">
+                                @* Product Name *@
+                                <div class="col-sm-3">
+                                    <small class="col p-0 font-weight-bold" for="txtProductName">Product Name</small>
+                                    <input id="Old_@i" hidden type="text" asp-for="_ProductList[i].ProductName" value="@Model._ProductList[i].ProductName" />
+                                    <input id="txtProductName_@i" class="form-control col-sm-12" type="text" asp-for="_ProductList[i].NewProductName" value="@Model._ProductList[i].NewProductName" />
+                                    <div id="lbltxtProductName_@i" class="invalid-feedback p-0"></div>
+                                </div>
+                                @* Product Category *@
+                                <div class="col-sm-3">
+                                    <small class="col p-0 font-weight-bold" for="txtCategory">Category</small>
+                                    <input id="@i" name="DDCategoryName" type="hidden" asp-for="_CategoryName" />
+                                    <select id="P1Pdd_@i" class="form-control col-sm-12" asp-for="_ProductList[i].CategoryName">
+                                        @if (Model != null && Model._CategoryList != null)
+                                        {
+                                            @foreach (var item in Model._CategoryList)
+                                            {
+                                                if (item.CategoryName == @Model._ProductList[i].CategoryName)
+                                                {
+                                                    <option selected>@item.CategoryName</option>
+                                                }
+                                                else
+                                                {
+                                                    <option>@item.CategoryName</option>
+                                                }
+                                            }
+                                        }
+                                    </select>
+                                </div>
+                                @* Product Retail Price *@
+                                <div class="col-sm-3">
+                                    <small class="col p-0 font-weight-bold" for="txtRetailPrice">Retail Price (£)</small>
+                                    <input id="txtRetailPrice_@i" onkeyup="CheckDecimal2(this.id, 999999.99)" class="form-control" type="text" asp-for="_ProductList[i].RetailPrice" value="@Model._ProductList[i].RetailPrice" />
+                                    <label id="lbltxtRetailPrice_@i" class="invalid-feedback p-0"></label>
+                                </div>
+                                @* Product Retail Unit *@
+                                <div class="col-sm-3">
+                                    <small class="col p-0 font-weight-bold" for="txtRetailUnit">Retail Unit</small>
+                                    <input id="txtRetailUnit_@i" class="form-control" type="text" asp-for="_ProductList[i].RetailUnit" value="@Model._ProductList[i].RetailUnit" />
+                                    <label id="lbltxtRetailUnit_@i" class="invalid-feedback p-0"></label>
+                                </div>
+                            </div>
+                            @* Product Stock Information *@
+                            <div class="row">
+                                @* Load the stock locations *@
+                                @if (Model._ProductList[i].StockInfo != null)
+                                {
+                                    @for (var b = 0; b < Model._ProductList[i].StockInfo.Count; b++)
+                                    {
+                                        @* Stock Level *@
+                                        <div class="col-sm-3 ">
+                                            <small class="col p-0 font-weight-bold" for="txtStockLevel">Stock Level (@Model._ProductList[i].StockInfo[b].LocationName)</small>
+                                            <input hidden type="text" asp-for="_ProductList[i].StockInfo[b].LocationName" />
+                                            <input hidden type="text" asp-for="_ProductList[i].StockInfo[b].ProductName" />
+                                            <input id="txtStockLevel_@b@i" onkeyup="CheckDecimal2(this.id,999999.99)" class="form-control" type="text" asp-for="_ProductList[i].StockInfo[b].StockQuantity" value="@Model._ProductList[i].StockInfo[b].StockQuantity" />
+                                            <label id="lbltxtStockLevel_@b@i" class="invalid-feedback"></label>
+                                        </div>
+                                    }
+                                }
+                                @* Delete Product Button *@
+                                <div class="col-sm-2 mt-auto ml-auto">
+                                    <button class="float-right btn btn-danger" type="button" data-toggle="modal" data-target=".modal_@i">Delete</button>
+                                </div>
+                                @* Delete Confirmation Model *@
+                                <div class="modal fade modal_@i" tabindex="-1" role="dialog" aria-hidden="true">
+                                    <div class="modal-dialog modal-body">
+                                        <div class="modal-content row bg-light">
+                                            <h4 class="col-12 mt-2 border-bottom">Confirmation</h4>
+                                            <p class="col-12 mt-1">
+                                                Are you sure you would like to delete @Model._ProductList[i].ProductName?
+                                                This action will delete the product and all it's related records.<br /><br />
+                                                Related records includes:<br />
+                                                Stock Information<br />
+                                                Order Items<br />
+                                                Quote Information
+                                            </p>
+                                        </div>
+                                        <div class="modal-content row bg-transparent">
+                                            <button class="col-12 btn btn-danger" asp-route-Product="@Model._ProductList[i].ProductName" data-toggle="modal" data-target=".modal_@i" asp-page-handler="Delete">
+                                                Delete
+                                            </button>
+                                            <button class="col-12 btn btn-success" type="button" data-toggle="modal" data-target=".modal_@i">
+                                                Cancel
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    @* Pagination for search result *@
+                    <div class="row">
+                        <nav class="col-8">
+                            <ul id="UlPagination" class="pagination mb-0 pb-0">
+                                <li class="page-item disabled"><Button class="page-link" aria-disabled="true">@TotalPages Pages:</Button></li>
+                                <li class="page-item">
+                                    <a class="page-link" onclick="PreviousPagination()" aria-label="Previous">
+                                        <span aria-hidden="true">&laquo;</span>
+                                    </a>
+                                </li>
+                                @* Load page numbers according to total page numbers received from server side*@
+                                @for (var c = 1; c <= TotalPages; c++)
+                                {
+                                    if (Model._ShowPageNum == c)
+                                    {
+                                        <li id="LiPage_@c" class="page-item active"><button id="Pagebtn__@c" class="page-link" name="ShowPageNum" value="@c" asp-page-handler="PageController">@c</button></li>
+                                    }
+                                    else
+                                    {
+                                        <li id="LiPage_@c" class="page-item"><button id="Pagebtn__@c" class="page-link" name="ShowPageNum" value="@c" asp-page-handler="PageController">@c</button></li>
+                                    }
+                                }
+                                <li class="page-item">
+                                    <a class="page-link" onclick="return NextPagination()" aria-label="Next">
+                                        <span aria-hidden="true">&raquo;</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+
+                    @* Update Product Button *@
+                    <div class="form-row mt-3">
+                        <div class="col-sm-6">
+                            @* Check if there are any errors *@
+                            @if (Model._ErrorList != null && Model._ErrorList.Count > 0)
+                            {
+                                <div id="PPFailModalBG" class="modal fade show bg-warning modal-backdrop" style="max-height:60%; display: block;">
+                                </div>
+                                <div id="PPFailModal" class="modal show" onclick="CloseModal(this.id)" data-backdrop="true" style="display: block;">
+                                    <div class="modal-dialog modal-body">
+                                        <div class="modal-content bg-warning border-0">
+                                            <font class="text-white text-center font-weight-bold img-fluid" size="7">Something Failed. Go to the end of the page to find out more.</font>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class=" active">
+                                    <div class="alert alert-warning">
+                                        <h5 class="col-12 font-weight-bold">Partial Error</h5>
+                                        @* Load the errors *@
+                                        @foreach (var item in Model._ErrorList)
+                                        {
+                                            <div id="ErrorForID_@item.ErrNumber" hidden>@item.ErrNumber</div>
+                                            <div class="col-12">@item.ItemErrorMsg</div>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                        @* Update all button *@
+                        <div class="col-sm-6">
+                            <button class="col-12 btn btn-success text-white" onclick="return !!POneSubmitCheck(@Model._ProductList.Count, @Model._ProductList[0].StockInfo.Count,@Model._ShowPageNum)" asp-page-handler="UpdateProduct">
+                                Update (all)
+                            </button>
+                        </div>
+                    </div>
+                }
+                // Else No record is found
+                else if ((bool)ViewData["NoRecordsFound"] == true)
+                {
+                    <font class="row"><small class="col-12">No Records found</small></font>
+                }
+            </div>
+        </form>
+    </div>
+</div>

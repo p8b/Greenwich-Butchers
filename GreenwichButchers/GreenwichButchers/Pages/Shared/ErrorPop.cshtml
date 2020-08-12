@@ -1,0 +1,26 @@
+﻿@if (ViewData["FailedMsg"] != null)
+{
+    @* Used to display Validation error *@
+    <div id="FailedMsgBG" class="modal fade show bg-danger modal-backdrop" style="height:100%; display: block;">
+    </div>
+    <a id="FailedMsg" class="modal show" @ViewData["FailedRedirect"] onclick="CloseModal(this.id)" data-backdrop="true" style="display: block;">
+        <div class="modal-dialog  modal-dialog-centered modal-body">
+            <div class="modal-content bg-danger border-0">
+                <font class="text-white text-center font-weight-bold img-fluid" size="7">@ViewData["FailedMsg"]</font>
+            </div>
+        </div>
+    </a>
+}
+@if (ViewData["SuccessMsg"] != null)
+{
+    @* Used to display validation error *@
+    <div id="SuccessMsgBG" class="modal fade show bg-success modal-backdrop" style="height:100%; display: block;">
+    </div>
+    <a id="SuccessMsg" class="modal rmoveUnderline show" @ViewData["SuccessRedirect"] onclick="CloseModal(this.id)" data-backdrop="true" style="display: block;">
+        <div class="modal-dialog  modal-dialog-centered modal-body">
+            <div class="modal-content bg-success border-0">
+                <font class="text-white text-center font-weight-bold img-fluid" size="7">@ViewData["SuccessMsg"]</font>
+            </div>
+        </div>
+    </a>
+}

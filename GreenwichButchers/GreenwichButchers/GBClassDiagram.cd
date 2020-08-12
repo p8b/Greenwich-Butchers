@@ -1,0 +1,163 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Class Name="GreenwichButchers.Models.AddressM">
+    <Position X="4.75" Y="1.25" Width="2" />
+    <TypeIdentifier>
+      <HashCode>QCAAAAAAAAgCAAAIAAAIAACAAAAAAAACAAAAgAAgAAA=</HashCode>
+      <FileName>Models\AddressM.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="GreenwichButchers.Models.CookieEncryptM">
+    <Position X="24.25" Y="6.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAACAAEAAAAAAAAAAAQAgAAEAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Models\CookieEncryptM.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="GreenwichButchers.Models.CustomerM">
+    <Position X="8" Y="3.75" Width="1.5" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAAQAAAAAAAAIAAAAAAgAAAEAAIAAAAAQRABAAAAAA=</HashCode>
+      <FileName>Models\CustomerM.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsCollectionAssociation>
+      <Property Name="AddressList" />
+    </ShowAsCollectionAssociation>
+  </Class>
+  <Class Name="GreenwichButchers.Models.EmployeeM">
+    <Position X="8" Y="5.75" Width="1.5" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAIAgAAAAAAAAEAgACAQAAAAAAAIAAAAAAAAAAAAgAI=</HashCode>
+      <FileName>Models\EmployeeM.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="GreenwichButchers.Models.LoginM">
+    <Position X="9.75" Y="7.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAEAAAAgAAAIAAAAAAAAAAAAAABAAAAAAAAAAA=</HashCode>
+      <FileName>Models\LoginM.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="GreenwichButchers.Models.MailingListM">
+    <Position X="4.75" Y="7.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAIAAAAAAAAAAABAAAAAAAAAAAEAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Models\MailingListM.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="GreenwichButchers.Models.OrderItemM">
+    <Position X="15" Y="4" Width="1.5" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAABABABBAACAAAwAAAAAAAAAAAAAABAAAAAAAAAAA=</HashCode>
+      <FileName>Models\OrderItemM.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsCollectionAssociation>
+      <Property Name="_QuoteList" />
+    </ShowAsCollectionAssociation>
+  </Class>
+  <Class Name="GreenwichButchers.Models.OrderItemQuoteM">
+    <Position X="14.5" Y="0.5" Width="2.25" />
+    <TypeIdentifier>
+      <HashCode>AAAACAAAAAAQCAgAAAACAAgAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Models\OrderItemQuoteM.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="GreenwichButchers.Models.OrderM">
+    <Position X="11.75" Y="1.75" Width="2.25" />
+    <AssociationLine Name="EmployeeList" Type="GreenwichButchers.Models.EmployeeM">
+      <MemberNameLabel ManuallyPlaced="true">
+        <Position X="0.808" Y="0.043" />
+      </MemberNameLabel>
+    </AssociationLine>
+    <AssociationLine Name="_Payment" Type="GreenwichButchers.Models.PaymentM">
+      <MemberNameLabel ManuallyPlaced="true">
+        <Position X="0.747" Y="0.069" />
+      </MemberNameLabel>
+    </AssociationLine>
+    <AssociationLine Name="_Customer" Type="GreenwichButchers.Models.CustomerM" ManuallyRouted="true" FixedFromPoint="true" FixedToPoint="true">
+      <Path>
+        <Point X="11.75" Y="4.077" />
+        <Point X="11.626" Y="4.077" />
+        <Point X="11.626" Y="4.562" />
+        <Point X="9.5" Y="4.562" />
+      </Path>
+      <MemberNameLabel ManuallyPlaced="true">
+        <Position X="0.791" Y="0.077" />
+      </MemberNameLabel>
+    </AssociationLine>
+    <TypeIdentifier>
+      <HashCode>ACKAABAMAAAAAEAABAAAwAAAEAAAAAABAwAAIAEAgAA=</HashCode>
+      <FileName>Models\OrderM.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsAssociation>
+      <Property Name="_Payment" />
+      <Property Name="_Customer" />
+    </ShowAsAssociation>
+    <ShowAsCollectionAssociation>
+      <Property Name="EmployeeList" />
+      <Property Name="ItemList" />
+    </ShowAsCollectionAssociation>
+  </Class>
+  <Class Name="GreenwichButchers.Models.PaymentM">
+    <Position X="7.75" Y="0.5" Width="2" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAEAAAAAAAAAAgAEBBEAQAACAAAAIAAAAIA=</HashCode>
+      <FileName>Models\PaymentM.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="GreenwichButchers.Models.PersonM">
+    <Position X="4.75" Y="4.5" Width="2" />
+    <TypeIdentifier>
+      <HashCode>QAAAAAAAACAAgEAAAAAAAAQABAAAAAACAAAAAAAAAAA=</HashCode>
+      <FileName>Models\PersonM.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="GreenwichButchers.Models.ProductCategoryM">
+    <Position X="20" Y="3.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAIAAAAABAIAAgAAAAAAAAAACAAAAAICCAAAABAAAQ=</HashCode>
+      <FileName>Models\ProductCategoryM.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="GreenwichButchers.Models.ProductM">
+    <Position X="17.5" Y="4.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAIgCEAAIACAAAAAAAAAAAAASAAAAAAAIAAAAAQIAAA=</HashCode>
+      <FileName>Models\ProductM.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsCollectionAssociation>
+      <Property Name="StockInfo" />
+    </ShowAsCollectionAssociation>
+  </Class>
+  <Class Name="GreenwichButchers.Models.StockLocationM">
+    <Position X="12" Y="7" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>ABAAAAQAAAAAAAAAAgIAAAAAAAAAAAAAAAAAAAAABAA=</HashCode>
+      <FileName>Models\StockLocationM.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="GreenwichButchers.Models.StockM">
+    <Position X="14.75" Y="7" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAIEAAAAAAAAAAAAAAAAIACA=</HashCode>
+      <FileName>Models\StockM.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="GreenwichButchers.Models.SupplierM">
+    <Position X="17.5" Y="0.5" Width="2" />
+    <TypeIdentifier>
+      <HashCode>AAABCAAAACAggIAAAAACEAAAAABAQAAAACAABAAAAAA=</HashCode>
+      <FileName>Models\SupplierM.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>

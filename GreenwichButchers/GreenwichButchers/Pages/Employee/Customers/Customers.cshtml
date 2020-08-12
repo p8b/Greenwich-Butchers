@@ -1,0 +1,247 @@
+﻿@page "/Customers/{Control?}"
+@model GreenwichButchers.Pages.Employee.CustomersRCModel
+@using GreenwichButchers.SystemClasses
+@{
+    ViewData["Title"] = "Customers";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+
+    #region Page Login Check
+    // Check the login status of the user by passing the "Cookie"
+    // To the Constructor of "LoginCheck" class.
+    var _LoginCheck = new LoginCheck(Request.Cookies["Cookie"] ?? "", true);
+
+    // If User Login status is true (Successful)
+    if (CUser.LoginStatus)
+    {
+        // Check User's Role
+        switch (CUser.UserRole)
+        {
+            // The Current view is only accessible if the user has "Manager" or
+            // Staff role
+            case "Manager":
+            case "Staff":
+                break;
+            // If the user is customer
+            case "Customer":
+                // Redirect the user to index page
+                Response.Redirect("/Index", false);
+                break;
+        }
+        // Overwrite the Cookie with new hash value
+        Response.Cookies.Append("Cookie", _LoginCheck.cookieEncryptM.HashCookieID);
+    }
+    else // Else Login status is false (Failed)
+    {
+        // Redirect the user to login page
+        Response.Redirect("/Login", false);
+        // Delete the Cookie incase it exists
+        Response.Cookies.Delete("Cookie", new Microsoft.AspNetCore.Http.CookieOptions { Expires = DateTime.Now });
+        return;
+    }
+    #endregion
+
+}
+@* import Page specific JavaScript *@
+@section Scripts{
+    <script type="text/javascript" src="~/js/CustomersJS.js"></script>
+}
+@* Header *@
+<div class="breadcrumb-item  border-bottom pb-0 border-success">
+    <a class="text-black-50">
+        <h3>Customer</h3>
+    </a>
+</div>
+
+@* Navigation Buttons*@
+<nav class="nav nav-pills mb-3 flex-column flex-sm-row text-center border-bottom">
+    @* Modify Customer Button *@
+    <a href="/Customers" class="nav-link btn btn-light flex-sm-fill active">Modify Customer</a>
+    @* Add Customer Navigation Button *@
+    <a href="/Customer/Register" class="nav-link btn btn-light flex-sm-fill">Register Customer</a>
+</nav>
+
+@* Main Body *@
+<div class="container">
+    <div class="tab-content" id="pills-tabContent">
+            @* Search box and category drop-down menu *@
+            <form method="post" class="row">
+                <h5 class="col-12 mb-2">Modify Customers</h5>
+                <div class="col-12 pb-3">
+                    <div class="form-row mb-2">
+                        @* Search Box *@
+                        <div class="col-sm-8">
+                            <div class="col-form-label" for="txtSearchBox">Search Customers by Name, Surname, Email or Customer ID</div>
+                            <input id="txtSeachBox" class="form-control" type="text" asp-for="_SearchValue" placeholder="Search" />
+                        </div>
+                        <div class="col-sm-2 mt-auto">
+                            @* Search Button *@
+                            <button class="btn btn-secondary col text-white" asp-page-handler="SearchCustomer">Search</button>
+                        </div>
+                        <div class="col-sm-2 mt-auto">
+                            @* Show All Customers Button *@
+                            <button class="btn btn-secondary col text-white" asp-page-handler="ShowAllCustomer">Show All</button>
+                        </div>
+                    </div>
+
+                    @* This hidden field is used to  pass the Id of the selected
+                        customer from the search result *@
+                    <input hidden="hidden" id="SelectIDValue" name="SelectIDValue" value="" />
+                    
+                    @* Search result *@
+                    <div class="form-row">
+                        @* Check if Customer list has objects *@
+                        @if (Model != null && Model._CustomerList != null && Model._CustomerList.Count != 0)
+                        {
+                            // The default page number
+                            int PageNum = 1;
+                            // Used to  decide whether to show the record (true) or not (false)
+                            var ShowRecord = false;
+                            // Set the total number of pages
+                            var TotalPages = 1;
+
+                            // Check if total number of searched orders is less than the amount set to be shown per page
+                            if (Model._CustomerList.Count > Model._ShowItemPerPage)
+                            {
+                                // divide the total number of orders by the amount set to be shown per page and round it up to the
+                                // nearest whole number
+                                TotalPages = Convert.ToInt32(Math.Ceiling((double)Model._CustomerList.Count / Model._ShowItemPerPage));
+                                if (TotalPages == 0)
+                                {
+                                    TotalPages = 1;
+                                }
+                            }
+
+                                @* Drop down menu to choose the amount of search items to show per page *@
+                                <nav class="col-sm-6">
+                                    <ul class="pagination mb-0 pb-0">
+                                        <li class="page-item">
+                                            <div class="dropdown">
+                                                <button class="btn dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                                    Show @Model._ShowItemPerPage Items Per Page
+                                                </button>
+                                                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                                                    @* Starting from 10 add 5 each time until 50 (Included) *@
+                                                    @for (var RecPerPageH = 5; RecPerPageH <= 30; RecPerPageH++)
+                                                    {
+                                                        <button class="dropdown-item" onclick="return Set_ShowPageNum(this.id)" id="@RecPerPageH" asp-page-handler="PageController">@RecPerPageH</button>
+                                                        RecPerPageH += 4;
+
+                                                    }
+                                                </div>
+                                                @* Hidden elements to hold the values for total page number and total shown items per page*@
+                                                <input id="ShowPageNumItem" type="hidden" asp-for="_ShowItemPerPage" value="@Model._ShowItemPerPage" />
+                                                <input id="TotalPages" type="hidden" value="@TotalPages" />
+                                            </div>
+                                        </li>
+                                    </ul>
+                                </nav>
+                                @* Shows the total number of search records found *@
+                                <div class="mt-auto ml-auto mr-1"><font size="3" class="col">Records Found: @Model._CustomerList.Count</font></div>
+
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Customer #</th>
+                                        <th scope="col">Contact Name</th>
+                                        <th scope="col">Email</th>
+                                        <th scope="col">Company</th>
+                                        <th scope="col"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+
+                                    @* Load all the Customers from the Customer list *@
+                                    @for (var i = 0; i < Model._CustomerList.Count; i++)
+                                    {
+                                        // if the current item falls within the Show item per page
+                                        if ((i + 1) % Model._ShowItemPerPage != 0)
+                                        {
+                                            // find the page number of the item
+                                            PageNum = ((i + 1) / Model._ShowItemPerPage) + 1;
+
+                                            // if the item page number and the current selected page
+                                            // number is equal
+                                            if (PageNum == Model._ShowPageNum)
+                                            {
+                                                // show the current item
+                                                ShowRecord = true;
+                                            }
+                                            else // else do not show the current item
+                                            {
+                                                ShowRecord = false;
+                                            }
+                                        }
+                                        // Filter the item according to their page
+                                        if (ShowRecord)
+                                        {
+                                            // Hidden element to pass the current page number to the server side
+                                            <tr hidde="hidden"><td hidden="hidden"><input hidden="hidden" name="currentPageNum" value="@PageNum" /></td></tr>
+
+                                            <tr>
+                                                <th scope="row">@Model._CustomerList[i].CustomerID</th>
+                                                <th>@Model._CustomerList[i].Title @Model._CustomerList[i].Name @Model._CustomerList[i].Surname</th>
+                                                <td>@Model._CustomerList[i].Email</td>
+                                                <td>@Model._CustomerList[i].Company</td>
+                                                @* Add new order button *@
+                                                <td>
+                                                    <button asp-route-CustomerID ="@Model._CustomerList[i].CustomerID"
+                                                            asp-page-handler="AddNewOrder"
+                                                            class="col-sm-12 btn btn-success col">
+                                                        Add New Order
+                                                    </button>
+                                                </td>
+
+                                                @* View more detail Button*@
+                                                <td>
+                                                    <button name="CustomerID"
+                                                            value="@Model._CustomerList[i].CustomerID"
+                                                            asp-page-handler="ViewDetailsCus"
+                                                            class="col-sm-12 btn btn-info col">
+                                                        View Details
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        }
+                                    }
+
+                                </tbody>
+                            </table>
+                                @* Pagination for search result *@
+                                <nav class="col-12">
+                                    <ul id="UlPagination" class="pagination mb-0 pb-0">
+                                        <li class="page-item disabled"><Button class="page-link" aria-disabled="true">@TotalPages Pages:</Button></li>
+                                        <li class="page-item">
+                                            <a class="page-link" onclick="PreviousPagination()" aria-label="Previous">
+                                                <span aria-hidden="true">&laquo;</span>
+                                            </a>
+                                        </li>
+                                        @* Load page numbers according to total page numbers received from server side*@
+                                        @for (var c = 1; c <= TotalPages; c++)
+                                        {
+                                            if (Model._ShowPageNum == c)
+                                            {
+                                                <li id="LiPage_@c" class="page-item active"><button id="Pagebtn__@c" class="page-link" name="ShowPageNum" value="@c" asp-page-handler="PageController">@c</button></li>
+                                            }
+                                            else
+                                            {
+                                                <li id="LiPage_@c" class="page-item"><button id="Pagebtn__@c" class="page-link" name="ShowPageNum" value="@c" asp-page-handler="PageController">@c</button></li>
+                                            }
+                                        }
+                                        <li class="page-item">
+                                            <a class="page-link" onclick="return NextPagination()" aria-label="Next">
+                                                <span aria-hidden="true">&raquo;</span>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </nav>
+                        }
+                        // Else No record is found
+                        else if (ViewData["NoRecordsFound"] != null && (bool)ViewData["NoRecordsFound"] == true)
+                        {
+                            <font class="row"><small class="col-12">No Records found</small></font>
+                        }
+                    </div>
+                </div>
+            </form>
+    </div>
+</div>

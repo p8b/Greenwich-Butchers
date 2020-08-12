@@ -1,0 +1,88 @@
+﻿@model GreenwichButchers.Pages.Employee.ProductRCModel
+<div class="tab-content">
+    <div class="tab-pane fade @ViewData["StockLocation"]" id="AddModifyStockLocation" role="tabpanel" aria-labelledby="AddModifyStockLocation-tab">
+        <div class="row">
+            @* Add Stock Location *@
+            <form method="post" class="col-sm-6 border pb-3">
+                <h5 class="mt-2">New Stock Location</h5>
+                @* Stock Location Name *@
+                <div class="form-row">
+                    <div class="col-form-label font-weight-bold" for="txtStockLocation"><small>Stock Location Name</small></div>
+                    <input id="txtStockLocation" class="form-control" type="text" asp-for="@Model._StockLocation.LocationName" value="" onchange="FieldRequiredCheck(this.id)" />
+                    <label id="lbltxtStockLocation" class="invalid-feedback p-0"></label>
+                </div>
+                @* Add Stock Location Button and Confirmation message *@
+                <div class="form-row mt-3">
+                    <div class="col-6">
+                        <button class="col-12 btn btn-success" onclick="return !!FieldRequiredCheck(txtStockLocation)" asp-page-handler="AddStockLocation">Add</button>
+                    </div>
+                </div>
+            </form>
+
+            @* Modify Stock Location *@
+            <form method="post" class="col-sm-6 border pb-3">
+                <h5 class="mt-2">Modify Stock Location</h5>
+                @* Stock Location Drop-down menu *@
+                <div class="form-row ">
+                    <div class="col-6">
+                        <label class="col-form-label font-weight-bold" for="ddStockLocation"><small>Select a Stock Location</small></label>
+                        <select id="ddStockLocation" class="form-control col-sm-12" onchange="SetStockLMsg(this.id)" asp-for="@Model._StockLocation.LocationName">
+                            <option selected disabled>Select a Location</option>
+                            @* Load existing stock locations *@
+                            @if (Model != null && Model._StockLocationList != null)
+                            {
+                                @foreach (var item in Model._StockLocationList)
+                                {
+
+                                    <option>@item.LocationName</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                </div>
+                @* Stock Location Name *@
+                <div class="form-row">
+                    <div class="col-form-label font-weight-bold" for="txtStockLocation"><small>New Stock Location Name</small></div>
+                    <input id="txtStockLocationModify" class="form-control" type="text" onchange="FieldRequiredCheck(this.id)" name="NewStockLocation" />
+                    <label id="lbltxtStockLocationModify" class="invalid-feedback p-0"></label>
+                </div>
+
+                <div class="form-row mt-3">
+
+                    <div class="col-6">
+                        @* Update Stock Location Button *@
+                        <button class="col-12 btn btn-success " asp-page-handler="UpdateStockLocation">Update</button>
+                        @* Delete Stock Location Button *@
+                        <button class="col-sm-12 btn btn-danger mt-1" type="button" data-toggle="modal" data-target=".modal_StockLocation">Delete</button>
+                        @* Delete Confirmation Model *@
+                        <div class="modal fade modal_StockLocation" tabindex="-1" role="dialog" aria-hidden="true">
+                            <div class="modal-dialog modal-body">
+                                <div class="modal-content row bg-light">
+                                    <h4 class="col-12 mt-2 border-bottom">Confirmation</h4>
+                                    <p class="col-12 mt-1">
+                                        Are you sure you would like to delete <font id="DelStockLocation"></font>?
+                                        This action will delete the stock location and all it's related records.<br /><br />
+                                        Related records includes:<br />
+                                        Product's Stock Information <br />
+                                    </p>
+                                </div>
+                                <div class="modal-content row bg-transparent">
+                                    @* Final delete button *@
+                                    <button class="col-12 btn btn-danger" data-toggle="modal" data-target=".modal_StockLocation" asp-page-handler="DeleteStockLocation">
+                                        Delete
+                                    </button>
+                                    @* Cancel button *@
+                                    <button class="col-12 btn btn-success" type="button" data-toggle="modal" data-target=".modal_StockLocation">
+                                        Cancel
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-row">
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

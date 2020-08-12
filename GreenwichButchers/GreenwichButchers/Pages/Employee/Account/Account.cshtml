@@ -1,0 +1,204 @@
+﻿@page "/Account/"
+@model GreenwichButchers.Pages.Employee.AccountRCModel
+@using GreenwichButchers.SystemClasses
+@{
+    ViewData["Title"] = "My Account";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+
+
+    #region Page Login Check
+    // Check the login status of the user by passing the "Cookie"
+    // To the Constructor of "LoginCheck" class.
+    var _LoginCheck = new LoginCheck(Request.Cookies["Cookie"] ?? "", true);
+
+    // If User Login status is true (Successful)
+    if (CUser.LoginStatus)
+    {
+        // Check User's Role
+        switch (CUser.UserRole)
+        {
+            // The Current view is only accessible if the user has "Manager" or
+            // Staff role
+            case "Manager":
+            case "Staff":
+                break;
+            // If the user is customer
+            case "Customer":
+                // Redirect the user to index page
+                Response.Redirect("/Index", false);
+                break;
+        }
+        // Overwrite the Cookie with new hash value
+        Response.Cookies.Append("Cookie", _LoginCheck.cookieEncryptM.HashCookieID);
+    }
+    else // Else Login status is false (Failed)
+    {
+        // Redirect the user to login page
+        Response.Redirect("/Login", false);
+        // Delete the Cookie incase it exists
+        Response.Cookies.Delete("Cookie", new Microsoft.AspNetCore.Http.CookieOptions { Expires = DateTime.Now });
+        return;
+    }
+    #endregion
+
+}
+@* import Page specific JavaScript *@
+@section Scripts{
+    <script type="text/javascript" src="~/js/EmployeeJS.js"></script>
+}
+@* Header *@
+<div class="breadcrumb-item  border-bottom pb-0 border-success">
+    <a class="text-black-50">
+        @if (ViewData["NewEmpAccountTitle"] != null)
+        {
+            <h3>Employee <small>(@ViewData["NewEmpAccountTitle"])</small></h3>
+        }
+        else
+        {
+            <h3>Employee <small>(ID @Model?._Employee?.EmployeeID)</small></h3>
+        }
+    </a>
+</div>
+@if (TempData["FromMaintenance"] != null && (bool)TempData["FromMaintenance"] == true)
+{
+    @* Navigation Buttons*@
+    <nav class="nav nav-pills mb-3 flex-column flex-sm-row text-center border-bottom">
+        @* The "ViewData[]" is used to set the active element from the server side*@
+        @* Employee  Navigation Button *@
+        <a href="/Employees?handler=FromModify" class="nav-link btn btn-light flex-sm-fill">Back</a>
+        <a class="nav-link disabled btn btn-light flex-sm-fill"></a>
+        <a class="nav-link disabled btn btn-light flex-sm-fill"></a>
+    </nav>
+}
+
+<div class="container">
+    @* Navigation Panels *@
+    <div class="tab-content" id="pills-tabContent">
+        <form method="post">
+            <div class="tab-content">
+                <div class="tab-pane fade active show">
+                    <div class="form-group row">
+                        @* Title *@
+                        <div class="col-6">
+                            @if (@Model?._Employee?.EmployeeID != 0)
+                            {
+                                <input type="hidden" asp-for="_Employee.EmployeeID" value="@Model._Employee.EmployeeID" />
+                            }
+                            <label class="col-form-label" for="txtTitle">Title</label>
+                            <select id="txtTitle" class="form-control col-sm-12 mr-auto" asp-for="@Model._Employee.Title">
+                                <option selected>Mr</option>
+                                <option>Miss</option>
+                                <option>Mrs</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="col-form-label">Position</label>
+                            @if (CUser.UserRole == "Manager")
+                            {
+                                @* Position *@
+                                <select id="txtPosition" class="form-control col-sm-12 mr-auto" asp-for="@Model._Employee.Position">
+                                    <option selected>Staff</option>
+                                    <option>Manager</option>
+                                </select>
+                            }
+                            else
+                            {
+                                <input id="txtPosition" type="text" disabled class="form-control" value="@Model?._Employee?.Position" />
+                                <input id="txtPositionhiddent" asp-for="@Model._Employee.Position" type="hidden"/>
+                            }
+                        </div>
+                        <div class="col-6">
+                            @* Name *@
+                            <label class="col-form-label">Name <small id="lbltxtName" class="text-red"></small></label>
+                            <input id="txtName" asp-for="@Model._Employee.Name" onkeyup="AlphabeticCheck(id, true)" type="text" class="form-control" />
+                        </div>
+                        <div class="col-6">
+                            @* Surname *@
+                            <label class="col-form-label">Surname  <small id="lbltxtSurname" class="text-red"></small></label>
+                            <input id="txtSurname" asp-for="@Model._Employee.Surname" onkeyup="AlphabeticCheck(id, true)" type="text" class="form-control" />
+                        </div>
+                        <div class="col-6">
+                            @* Email *@
+                            <label class="col-form-label" for="txtEmail">Email  <small id="lbltxtEmail" class="text-red"></small></label>
+                            <input id="txtEmail" asp-for="@Model._Employee.Email" onkeyup="ContainsValidEmail(id,true)" class="form-control" type="email" autocomplete="new-password" />
+                        </div>
+                        <div class="col-6">
+                            @* Tel *@
+                            <label class="col-form-label" for="txtTel">Tel. <small id="lbltxtTel" class="text-red"></small></label>
+                            <input id="txtTel" asp-for="@Model._Employee.Tel" onkeyup="TelChecker(id, true)" type="text" class="form-control" />
+                        </div>
+                        @if ((TempData["FromMaintenance"] != null && (bool)TempData["FromMaintenance"] == true) && @Model?._Employee?.EmployeeID == 0)
+                        {
+                            @* Password *@
+                            <div class="col-6">
+                                <label class="col-form-label">New Password <small id="lbltxtNewPassword" class=""></small></label>
+                                <input id="txtNewPassword" asp-for="@Model._Employee.Password" onkeyup="ConfirmPassCheck(id)" class="form-control" type="password" autocomplete="new-password" />
+                            </div>
+                            @* Confirm Password *@
+                            <div class="col-6">
+                                <label class="col-form-label">Confirm New Password <small id="lbltxtNewPasswordConfirm" class=""></small></label>
+                                <input id="txtNewPasswordConfirm" asp-for="@Model._Employee.Password" onkeyup="ConfirmPassCheck(id)" class="form-control" type="password" autocomplete="new-password" />
+                            </div>
+                            <div class="col-6 ml-auto">
+                                <button class="col-12 btn btn-success mt-lg-3" onclick="return NewEmployee()" asp-page-handler="AddEmployeeInfo">
+                                    Add
+                                </button>
+                            </div>
+                        }
+                        else if (@Model?._Employee?.EmployeeID != 0)
+                        {
+                            <div class="col-6 ml-auto mt-3">
+                                <div class="col-12">
+                                    <button id="PasswordModal" type="button" class="btn btn-secondary col-12" data-toggle="modal" data-target=".ChangePasswordModal">Change Password</button>
+                                    <div class="modal fade ChangePasswordModal" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
+                                        @* Back Button *@
+                                        <div class="modal-dialog modal-body">
+                                            <div class="modal-content row">
+                                                @* Old Password *@
+                                                <div class="col-12">
+                                                    <label class="col-form-label">Current Password <small id="lblOldPassword" class="text-red"></small></label>
+                                                    <input id="OldPassword" name="OldPassword" class="form-control" type="password" autocomplete="new-password" />
+                                                </div>
+                                                @* Password *@
+                                                <div class="col-12">
+                                                    <label class="col-form-label">New Password <small id="lbltxtNewPassword" class=""></small></label>
+                                                    <input id="txtNewPassword" asp-for="@Model._Employee.Password" onkeyup="ConfirmPassCheck(id)" class="form-control" type="password" autocomplete="new-password" />
+                                                </div>
+                                                @* Confirm Password *@
+                                                <div class="col-12">
+                                                    <label class="col-form-label">Confirm New Password <small id="lbltxtNewPasswordConfirm" class=""></small></label>
+                                                    <input id="txtNewPasswordConfirm" asp-for="@Model._Employee.Password" onkeyup="ConfirmPassCheck(id)" class="form-control" type="password" autocomplete="new-password" />
+                                                </div>
+                                                <div class="col-12 mb-2 mt-2">
+                                                    <div class="form-row">
+                                                        @* Cancel *@
+                                                        <a class="col-sm-6 btn p-1 text-white btn-secondary" data-toggle="modal" data-target=".ChangePasswordModal">
+                                                            Cancel
+                                                        </a>
+                                                        @* Submit Password Change *@
+                                                        <button type="submit" class="col-sm-6 btn p-1 btn-success" onclick="return UpdatePassword()" asp-page-handler="UpdatePassword">
+                                                            Submit
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                </div>
+
+                                <div class="col-12">
+                                    <button class="col-12 btn btn-success mt-lg-3" onclick="return UpdateEmployeeInfo()" asp-page-handler="UpdateEmployeeInfo">
+                                        Submit Changes
+                                    </button>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+<partial name="~/Pages/Shared/ErrorPop.cshtml" />

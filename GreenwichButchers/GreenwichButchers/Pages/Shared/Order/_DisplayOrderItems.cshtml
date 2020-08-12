@@ -1,0 +1,26 @@
+﻿@model GreenwichButchers.Pages.Shared.OrderRCModel
+@* Display order items for Customer View*@
+<div class="form-group row">
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th scope="col">Product Name</th>
+                <th scope="col">Price</th>
+                <th scope="col">Quantity</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model?._Order?.ItemList != null)
+            {
+                @foreach (var item in Model._Order.ItemList)
+                {
+                    <tr>
+                        <td>@item.ProductName</td>
+                        <th>£@item.ItemPrice</th>
+                        <td>@item.ItemQuantity @item.RetailUnit</td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>
